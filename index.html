@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Peso</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f4f4f4;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    h2 {
+      margin-bottom: 15px;
+      font-size: 20px;
+    }
+
+    input,
+    select,
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      background: #111827;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      opacity: 0.95;
+    }
+
+    .resultado {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 10px;
+    }
+
+    .registro {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 10px 0;
+    }
+
+    .registro:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <div class="card">
+      <h2>Cadastrar Cliente</h2>
+
+      <input type="text" id="nomeCliente" placeholder="Nome do cliente" />
+
+      <button onclick="cadastrarCliente()">
+        Cadastrar Cliente
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>Registrar Peso</h2>
+
+      <select id="clienteSelect"></select>
+
+      <input type="number" id="peso" placeholder="Peso" step="0.01" />
+
+      <button onclick="salvarPeso()">
+        Salvar Peso
+      </button>
+    </div>
+
+    <div class="card">
+      <h2>Relatório Mensal</h2>
+
+      <select id="clienteRelatorio"></select>
+
+      <button onclick="carregarRelatorio()">
+        Consultar
+      </button>
+
+      <div id="resultado" class="resultado"></div>
+    </div>
+
+  </div>
+
+  <script type="module">
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      where
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBIft4dD4qnYFYGRejb8U45GR8F7bwEcFM",
+      authDomain: "aplicativo-94023.firebaseapp.com",
+      projectId: "aplicativo-94023",
+      storageBucket: "aplicativo-94023.firebasestorage.app",
+      messagingSenderId: "14678643756",
+      appId: "1:14678643756:web:e1b7b9caca05251b92ed89",
+      measurementId: "G-4FX9K251J7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function carregarClientes() {
+
+      const snapshot = await getDocs(collection(db, "clientes"));
+
+      const select = document.getElementById("clienteSelect");
+      const selectRelatorio = document.getElementById("clienteRelatorio");
+
+      select.innerHTML = "";
+      selectRelatorio.innerHTML = "";
+
+      snapshot.forEach((doc) => {
+
+        const cliente = doc.data();
+
+        const option1 = document.createElement("option");
+        option1.value = doc.id;
+        option1.textContent = cliente.nome;
+
+        const option2 = document.createElement("option");
+        option2.value = doc.id;
+        option2.textContent = cliente.nome;
+
+        select.appendChild(option1);
+        selectRelatorio.appendChild(option2);
+      });
+    }
+
+    window.cadastrarCliente = async function () {
+
+      const nome = document.getElementById("nomeCliente").value;
+
+      if (!nome) {
+        alert("Digite o nome do cliente");
+        return;
+      }
+
+      await addDoc(collection(db, "clientes"), {
+        nome,
+        criadoEm: new Date().toISOString()
+      });
+
+      alert("Cliente cadastrado!");
+
+      document.getElementById("nomeCliente").value = "";
+
+      carregarClientes();
+    }
+
+    window.salvarPeso = async function () {
+
+      const clienteId = document.getElementById("clienteSelect").value;
+      const clienteNome = document.getElementById("clienteSelect").selectedOptions[0].textContent;
+      const peso = parseFloat(document.getElementById("peso").value);
+
+      if (!peso) {
+        alert("Digite o peso");
+        return;
+      }
+
+      const hoje = new Date();
+
+      await addDoc(collection(db, "registros"), {
+        clienteId,
+        clienteNome,
+        peso,
+        data: hoje.toISOString().split("T")[0],
+        timestamp: hoje.toISOString(),
+        mes: hoje.getMonth() + 1,
+        ano: hoje.getFullYear()
+      });
+
+      alert("Peso salvo!");
+
+      document.getElementById("peso").value = "";
+    }
+
+    window.carregarRelatorio = async function () {
+
+      const clienteId = document.getElementById("clienteRelatorio").value;
+
+      const hoje = new Date();
+      const mes = hoje.getMonth() + 1;
+      const ano = hoje.getFullYear();
+
+      const q = query(
+        collection(db, "registros"),
+        where("clienteId", "==", clienteId),
+        where("mes", "==", mes),
+        where("ano", "==", ano)
+      );
+
+      const snapshot = await getDocs(q);
+
+      let total = 0;
+      let html = "";
+
+      snapshot.forEach((doc) => {
+
+        const item = doc.data();
+
+        total += item.peso;
+
+        html += `
+          <div class="registro">
+            <strong>Data:</strong> ${item.data}<br>
+            <strong>Peso:</strong> ${item.peso}
+          </div>
+        `;
+      });
+
+      html = `
+        <h3>Total do mês: ${total.toFixed(2)}</h3>
+        <br>
+        ${html}
+      `;
+
+      document.getElementById("resultado").innerHTML = html;
+    }
+
+    carregarClientes();
+
+  </script>
+
+</body>
+</html>
