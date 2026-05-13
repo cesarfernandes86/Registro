@@ -36,6 +36,10 @@
       font-size: 20px;
     }
 
+    h3 {
+      margin: 10px 0;
+    }
+
     input,
     select,
     button {
@@ -74,6 +78,12 @@
     .registro:last-child {
       border-bottom: none;
     }
+
+    .vazio {
+      text-align: center;
+      color: #6b7280;
+      padding: 15px;
+    }
   </style>
 </head>
 <body>
@@ -91,9 +101,21 @@
     </div>
 
     <div class="card">
+      <h2>Cadastrar Produto</h2>
+
+      <input type="text" id="nomeProduto" placeholder="Nome do produto" />
+
+      <button onclick="cadastrarProduto()">
+        Cadastrar Produto
+      </button>
+    </div>
+
+    <div class="card">
       <h2>Registrar Peso</h2>
 
       <select id="clienteSelect"></select>
+
+      <select id="produtoSelect"></select>
 
       <input type="number" id="peso" placeholder="Peso" step="0.01" />
 
@@ -152,16 +174,16 @@
       select.innerHTML = "";
       selectRelatorio.innerHTML = "";
 
-      snapshot.forEach((doc) => {
+      snapshot.forEach((docItem) => {
 
-        const cliente = doc.data();
+        const cliente = docItem.data();
 
         const option1 = document.createElement("option");
-        option1.value = doc.id;
+        option1.value = docItem.id;
         option1.textContent = cliente.nome;
 
         const option2 = document.createElement("option");
-        option2.value = doc.id;
+        option2.value = docItem.id;
         option2.textContent = cliente.nome;
 
         select.appendChild(option1);
@@ -169,9 +191,29 @@
       });
     }
 
+    async function carregarProdutos() {
+
+      const snapshot = await getDocs(collection(db, "produtos"));
+
+      const select = document.getElementById("produtoSelect");
+
+      select.innerHTML = "";
+
+      snapshot.forEach((docItem) => {
+
+        const produto = docItem.data();
+
+        const option = document.createElement("option");
+        option.value = docItem.id;
+        option.textContent = produto.nome;
+
+        select.appendChild(option);
+      });
+    }
+
     window.cadastrarCliente = async function () {
 
-      const nome = document.getElementById("nomeCliente").value;
+      const nome = document.getElementById("nomeCliente").value.trim();
 
       if (!nome) {
         alert("Digite o nome do cliente");
@@ -187,17 +229,55 @@
 
       document.getElementById("nomeCliente").value = "";
 
-      carregarClientes();
-    }
+      await carregarClientes();
+    };
+
+    window.cadastrarProduto = async function () {
+
+      const nome = document.getElementById("nomeProduto").value.trim();
+
+      if (!nome) {
+        alert("Digite o nome do produto");
+        return;
+      }
+
+      await addDoc(collection(db, "produtos"), {
+        nome,
+        criadoEm: new Date().toISOString()
+      });
+
+      alert("Produto cadastrado!");
+
+      document.getElementById("nomeProduto").value = "";
+
+      await carregarProdutos();
+    };
 
     window.salvarPeso = async function () {
 
-      const clienteId = document.getElementById("clienteSelect").value;
-      const clienteNome = document.getElementById("clienteSelect").selectedOptions[0].textContent;
+      const clienteSelect = document.getElementById("clienteSelect");
+      const produtoSelect = document.getElementById("produtoSelect");
+
+      if (!clienteSelect.value) {
+        alert("Cadastre um cliente primeiro");
+        return;
+      }
+
+      if (!produtoSelect.value) {
+        alert("Cadastre um produto primeiro");
+        return;
+      }
+
+      const clienteId = clienteSelect.value;
+      const clienteNome = clienteSelect.selectedOptions[0].textContent;
+
+      const produtoId = produtoSelect.value;
+      const produtoNome = produtoSelect.selectedOptions[0].textContent;
+
       const peso = parseFloat(document.getElementById("peso").value);
 
-      if (!peso) {
-        alert("Digite o peso");
+      if (isNaN(peso) || peso <= 0) {
+        alert("Digite um peso válido");
         return;
       }
 
@@ -206,6 +286,8 @@
       await addDoc(collection(db, "registros"), {
         clienteId,
         clienteNome,
+        produtoId,
+        produtoNome,
         peso,
         data: hoje.toISOString().split("T")[0],
         timestamp: hoje.toISOString(),
@@ -213,14 +295,19 @@
         ano: hoje.getFullYear()
       });
 
-      alert("Peso salvo!");
+      alert("Peso salvo com sucesso!");
 
       document.getElementById("peso").value = "";
-    }
+    };
 
     window.carregarRelatorio = async function () {
 
       const clienteId = document.getElementById("clienteRelatorio").value;
+
+      if (!clienteId) {
+        alert("Selecione um cliente");
+        return;
+      }
 
       const hoje = new Date();
       const mes = hoje.getMonth() + 1;
@@ -236,32 +323,72 @@
       const snapshot = await getDocs(q);
 
       let total = 0;
-      let html = "";
+      let totaisProdutos = {};
+      let htmlRegistros = "";
 
-      snapshot.forEach((doc) => {
+      if (snapshot.empty) {
+        document.getElementById("resultado").innerHTML = `
+          <div class="vazio">
+            Nenhum registro encontrado neste mês.
+          </div>
+        `;
+        return;
+      }
 
-        const item = doc.data();
+      snapshot.forEach((docItem) => {
+
+        const item = docItem.data();
 
         total += item.peso;
 
-        html += `
+        if (!totaisProdutos[item.produtoNome]) {
+          totaisProdutos[item.produtoNome] = 0;
+        }
+
+        totaisProdutos[item.produtoNome] += item.peso;
+
+        htmlRegistros += `
           <div class="registro">
             <strong>Data:</strong> ${item.data}<br>
-            <strong>Peso:</strong> ${item.peso}
+            <strong>Produto:</strong> ${item.produtoNome}<br>
+            <strong>Peso:</strong> ${item.peso.toFixed(2)}
           </div>
         `;
       });
 
-      html = `
-        <h3>Total do mês: ${total.toFixed(2)}</h3>
+      let resumoProdutos = "";
+
+      for (const produto in totaisProdutos) {
+        resumoProdutos += `
+          <div class="registro">
+            <strong>${produto}</strong>: ${totaisProdutos[produto].toFixed(2)}
+          </div>
+        `;
+      }
+
+      const htmlFinal = `
+        <h3>Total Geral do Mês: ${total.toFixed(2)}</h3>
+
         <br>
-        ${html}
+
+        <h3>Total por Produto</h3>
+        ${resumoProdutos}
+
+        <br>
+
+        <h3>Registros</h3>
+        ${htmlRegistros}
       `;
 
-      document.getElementById("resultado").innerHTML = html;
+      document.getElementById("resultado").innerHTML = htmlFinal;
+    };
+
+    async function iniciarSistema() {
+      await carregarClientes();
+      await carregarProdutos();
     }
 
-    carregarClientes();
+    iniciarSistema();
 
   </script>
 
