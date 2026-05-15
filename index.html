@@ -4,273 +4,561 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Controle de Peso</title>
-
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
+    :root {
+      --bg: #0d0d0f;
+      --surface: #17171a;
+      --surface-2: #202024;
+      --surface-3: #2a2a2f;
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.14);
+      --text-1: #f0f0f2;
+      --text-2: #8c8c9a;
+      --text-3: #525260;
+      --accent: #6e5dff;
+      --accent-dim: rgba(110,93,255,0.15);
+      --accent-border: rgba(110,93,255,0.4);
+      --green: #22c55e;
+      --green-dim: rgba(34,197,94,0.12);
+      --red: #ef4444;
+      --red-dim: rgba(239,68,68,0.12);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
     }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #f4f4f4;
-      padding: 20px;
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
     }
 
-    .container {
-      max-width: 500px;
-      margin: auto;
-    }
-
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 16px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-    }
-
-    h2 {
-      margin-bottom: 15px;
-      font-size: 20px;
-    }
-
-    h3 {
-      margin: 10px 0;
-    }
-
-    input,
-    select,
-    button {
-      width: 100%;
-      padding: 14px;
-      margin-top: 10px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-
-    button {
-      background: #111827;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    button:hover {
-      opacity: 0.85;
-    }
-
-    .btn-secundario {
-      background: #374151;
-    }
-
-    .resultado {
-      margin-top: 15px;
-      padding: 12px;
-      background: #f9fafb;
-      border-radius: 10px;
-    }
-
-    .registro {
-      border-bottom: 1px solid #e5e7eb;
-      padding: 10px 0;
-    }
-
-    .registro:last-child {
-      border-bottom: none;
-    }
-
-    .vazio {
-      text-align: center;
-      color: #6b7280;
-      padding: 15px;
-    }
-
-    /* ── Multi-produto ── */
-    .produto-row {
+    .topbar {
       display: flex;
-      gap: 8px;
-      margin-top: 10px;
-      align-items: flex-start;
-    }
-
-    .produto-row select,
-    .produto-row input {
-      margin-top: 0;
-      flex: 1;
-    }
-
-    .produto-row input[type="number"] {
-      max-width: 110px;
-      flex: none;
-    }
-
-    .btn-adicionar {
-      width: auto;
-      padding: 14px 18px;
-      margin-top: 0;
-      flex-shrink: 0;
-      font-size: 22px;
-      line-height: 1;
-      background: #111827;
-      border-radius: 10px;
-    }
-
-    .lista-itens {
-      margin-top: 14px;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .lista-itens-header {
-      background: #f3f4f6;
-      padding: 8px 12px;
-      font-size: 13px;
-      font-weight: bold;
-      color: #374151;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .item-linha {
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      padding: 10px 12px;
-      border-top: 1px solid #e5e7eb;
+      gap: 10px;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-icon {
+      width: 32px; height: 32px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent-border);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
       font-size: 15px;
     }
 
-    .item-linha:first-of-type {
-      border-top: none;
-    }
-
-    .item-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .item-produto {
+    .topbar-title {
+      font-size: 15px;
       font-weight: 600;
-      color: #111827;
+      letter-spacing: -0.01em;
     }
 
-    .item-peso {
-      color: #6b7280;
+    .topbar-sub {
+      font-size: 12px;
+      color: var(--text-3);
+      margin-left: auto;
+    }
+
+    .tab-nav {
+      display: flex;
+      gap: 2px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .tab-nav::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
       font-size: 13px;
+      font-weight: 500;
+      color: var(--text-2);
+      white-space: nowrap;
+      transition: all 0.15s;
     }
 
-    .btn-remover {
+    .tab-btn:hover { background: var(--surface-2); color: var(--text-1); }
+    .tab-btn.active { background: var(--surface-2); color: var(--text-1); }
+    .tab-btn.active .tab-dot { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+    .tab-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-3);
+      transition: all 0.15s;
+    }
+
+    .content {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .section-desc {
+      font-size: 13px;
+      color: var(--text-2);
+      margin-bottom: 24px;
+    }
+
+    .field { margin-bottom: 12px; }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+      margin-bottom: 7px;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--text-1);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23525260' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 38px;
+      cursor: pointer;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent-border);
+      background: var(--surface-2);
+    }
+
+    .field input::placeholder { color: var(--text-3); }
+    .field select option { background: #1e1e24; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      background: var(--surface-2);
+      color: var(--text-1);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--border-hover); background: var(--surface-3); }
+
+    .btn-add {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      padding: 12px 18px;
       width: auto;
-      padding: 6px 12px;
-      margin-top: 0;
-      background: #ef4444;
-      border-radius: 8px;
+      flex-shrink: 0;
+      font-size: 20px;
+      line-height: 1;
+      font-weight: 400;
+    }
+    .btn-add:hover { background: rgba(110,93,255,0.25); }
+
+    .btn-save {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(34,197,94,0.25);
+      margin-top: 4px;
+    }
+    .btn-save:hover { background: rgba(34,197,94,0.2); }
+    .btn-save:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      color: var(--text-3);
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: var(--radius-sm);
       font-size: 13px;
-      font-weight: bold;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+    .btn-remove:hover { background: var(--red-dim); color: var(--red); }
+
+    .row-add {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      margin-bottom: 12px;
+    }
+    .row-add .field { margin-bottom: 0; flex: 1; }
+    .row-add .field-peso { flex: 0 0 110px; }
+
+    .item-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 12px;
     }
 
-    .btn-remover:hover {
-      background: #dc2626;
-      opacity: 1;
-    }
-
-    .total-linha {
-      background: #f9fafb;
-      padding: 10px 12px;
-      border-top: 2px solid #e5e7eb;
+    .item-list-header {
       display: flex;
       justify-content: space-between;
-      font-weight: bold;
-      color: #111827;
+      align-items: center;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .btn-salvar {
-      margin-top: 14px;
-      background: #059669;
+    .item-list-header span {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-3);
     }
 
-    .btn-salvar:hover {
-      background: #047857;
-      opacity: 1;
+    .item-list-header .badge {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      border-radius: 99px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
     }
 
-    .btn-salvar:disabled {
-      background: #9ca3af;
-      cursor: not-allowed;
+    .item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+    .item-row:last-of-type { border-bottom: none; }
+    .item-row:hover { background: var(--surface-2); }
+
+    .item-left { display: flex; align-items: center; gap: 12px; }
+
+    .item-icon {
+      width: 32px; height: 32px;
+      background: var(--surface-3);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .item-name { font-size: 14px; font-weight: 500; }
+
+    .item-peso-tag {
+      font-size: 12px;
+      color: var(--text-2);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .item-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--surface-2);
+      border-top: 1px solid var(--border);
+    }
+
+    .item-total-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+    }
+
+    .item-total-value {
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    .report-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-top: 16px;
+    }
+
+    .report-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .report-header-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+      margin-bottom: 4px;
+    }
+
+    .report-total {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .report-total span {
+      font-size: 14px;
+      color: var(--text-2);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .report-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+      padding: 14px 20px 8px;
+    }
+
+    .report-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .report-row-label { font-size: 14px; }
+    .report-row-value {
+      font-size: 14px;
+      font-family: 'DM Mono', monospace;
+      color: var(--text-2);
+    }
+
+    .report-date { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-3);
+    }
+    .empty-state .icon { font-size: 28px; margin-bottom: 10px; }
+    .empty-state p { font-size: 14px; }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface-3);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-md);
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 999;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+      opacity: 0;
+      white-space: nowrap;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .toast-dot.success { background: var(--green); }
+    .toast-dot.error { background: var(--red); }
+
+    .lista-registos-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
+  <div class="topbar">
+    <div class="topbar-icon">⚖️</div>
+    <span class="topbar-title">Controle de Peso</span>
+    <span class="topbar-sub" id="dataHoje"></span>
+  </div>
 
-    <div class="card">
-      <h2>Cadastrar Cliente</h2>
-      <input type="text" id="nomeCliente" placeholder="Nome do cliente" />
-      <button onclick="cadastrarCliente()">Cadastrar Cliente</button>
-    </div>
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="setTab('registar')">
+      <span class="tab-dot"></span> Registar Peso
+    </button>
+    <button class="tab-btn" onclick="setTab('clientes')">
+      <span class="tab-dot"></span> Clientes
+    </button>
+    <button class="tab-btn" onclick="setTab('produtos')">
+      <span class="tab-dot"></span> Produtos
+    </button>
+    <button class="tab-btn" onclick="setTab('relatorio')">
+      <span class="tab-dot"></span> Relatório
+    </button>
+  </nav>
 
-    <div class="card">
-      <h2>Cadastrar Produto</h2>
-      <input type="text" id="nomeProduto" placeholder="Nome do produto" />
-      <button onclick="cadastrarProduto()">Cadastrar Produto</button>
-    </div>
+  <div class="content">
 
-    <div class="card">
-      <h2>Registrar Peso</h2>
+    <!-- Registar Peso -->
+    <div class="panel active" id="panel-registar">
+      <div class="section-title">Registar Peso</div>
+      <div class="section-desc">Selecione o cliente, adicione produtos e os respetivos pesos.</div>
 
-      <select id="clienteSelect"></select>
-
-      <!-- Linha de adição de produto -->
-      <div class="produto-row">
-        <select id="produtoSelect"></select>
-        <input type="number" id="peso" placeholder="Peso" step="0.01" min="0.01" />
-        <button class="btn-adicionar" onclick="adicionarItem()" title="Adicionar produto">+</button>
+      <div class="field">
+        <label>Cliente</label>
+        <select id="clienteSelect"></select>
       </div>
 
-      <!-- Lista de itens adicionados -->
-      <div id="listaItens" style="display:none;" class="lista-itens">
-        <div class="lista-itens-header">
-          <span>Produtos adicionados</span>
-          <span id="contadorItens">0 item(s)</span>
+      <div class="divider"></div>
+
+      <div class="row-add">
+        <div class="field">
+          <label>Produto</label>
+          <select id="produtoSelect"></select>
         </div>
-        <div id="itensConteudo"></div>
-        <div class="total-linha">
-          <span>Total</span>
-          <span id="totalPeso">0.00</span>
+        <div class="field field-peso">
+          <label>Peso (kg)</label>
+          <input type="number" id="peso" placeholder="0.00" step="0.01" min="0.01" />
         </div>
+        <button class="btn btn-add" onclick="adicionarItem()" title="Adicionar">+</button>
       </div>
 
-      <button class="btn-salvar" id="btnSalvar" onclick="salvarPeso()" disabled>
-        Salvar Registo
-      </button>
+      <div id="listaItens" style="display:none;">
+        <div class="item-list">
+          <div class="item-list-header">
+            <span>Itens adicionados</span>
+            <span class="badge" id="contadorItens">0</span>
+          </div>
+          <div id="itensConteudo"></div>
+          <div class="item-total-row">
+            <span class="item-total-label">Total</span>
+            <span class="item-total-value" id="totalPeso">0.00 kg</span>
+          </div>
+        </div>
+        <button class="btn btn-save" id="btnSalvar" onclick="salvarPeso()">
+          ✓ &nbsp;Guardar Registo
+        </button>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Relatório Mensal</h2>
-      <select id="clienteRelatorio"></select>
-      <button onclick="carregarRelatorio()">Consultar</button>
-      <div id="resultado" class="resultado"></div>
+    <!-- Clientes -->
+    <div class="panel" id="panel-clientes">
+      <div class="section-title">Clientes</div>
+      <div class="section-desc">Adicione e gerencie os clientes do sistema.</div>
+
+      <div class="field">
+        <label>Nome do cliente</label>
+        <input type="text" id="nomeCliente" placeholder="Ex: João Silva" />
+      </div>
+      <button class="btn btn-primary" onclick="cadastrarCliente()">Cadastrar Cliente</button>
+
+      <div class="divider"></div>
+
+      <div id="listaClientes"></div>
+    </div>
+
+    <!-- Produtos -->
+    <div class="panel" id="panel-produtos">
+      <div class="section-title">Produtos</div>
+      <div class="section-desc">Adicione e gerencie os produtos disponíveis.</div>
+
+      <div class="field">
+        <label>Nome do produto</label>
+        <input type="text" id="nomeProduto" placeholder="Ex: Cobre" />
+      </div>
+      <button class="btn btn-primary" onclick="cadastrarProduto()">Cadastrar Produto</button>
+
+      <div class="divider"></div>
+
+      <div id="listaProdutos"></div>
+    </div>
+
+    <!-- Relatório -->
+    <div class="panel" id="panel-relatorio">
+      <div class="section-title">Relatório Mensal</div>
+      <div class="section-desc">Consulte o resumo de peso registado no mês atual.</div>
+
+      <div class="field">
+        <label>Cliente</label>
+        <select id="clienteRelatorio"></select>
+      </div>
+      <button class="btn btn-secondary" onclick="carregarRelatorio()">Consultar</button>
+
+      <div id="resultado"></div>
     </div>
 
   </div>
 
-  <script type="module">
+  <div class="toast" id="toast">
+    <span class="toast-dot success" id="toastDot"></span>
+    <span id="toastMsg">Operação concluída</span>
+  </div>
 
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      query,
-      where
+      getFirestore, collection, addDoc, getDocs, query, where
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -286,189 +574,208 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Estado da lista de itens a registar
     let itensParaSalvar = [];
+    let clientesCache = [];
+    let produtosCache = [];
 
-    // ── Carregamento de selects ──────────────────────────────────────────────
+    const hoje = new Date();
+    document.getElementById("dataHoje").textContent =
+      hoje.toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" });
+
+    window.showToast = function(msg, tipo = "success") {
+      const t = document.getElementById("toast");
+      document.getElementById("toastMsg").textContent = msg;
+      document.getElementById("toastDot").className = "toast-dot " + tipo;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 3000);
+    };
+
+    window.setTab = function(id) {
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById("panel-" + id).classList.add("active");
+      const order = ["registar","clientes","produtos","relatorio"];
+      document.querySelectorAll(".tab-btn")[order.indexOf(id)].classList.add("active");
+    };
 
     async function carregarClientes() {
       const snapshot = await getDocs(collection(db, "clientes"));
-      const select = document.getElementById("clienteSelect");
-      const selectRelatorio = document.getElementById("clienteRelatorio");
+      clientesCache = [];
+      snapshot.forEach(d => clientesCache.push({ id: d.id, ...d.data() }));
 
-      select.innerHTML = "";
-      selectRelatorio.innerHTML = "";
-
-      snapshot.forEach((docItem) => {
-        const cliente = docItem.data();
-
-        const option1 = document.createElement("option");
-        option1.value = docItem.id;
-        option1.textContent = cliente.nome;
-
-        const option2 = document.createElement("option");
-        option2.value = docItem.id;
-        option2.textContent = cliente.nome;
-
-        select.appendChild(option1);
-        selectRelatorio.appendChild(option2);
+      const s1 = document.getElementById("clienteSelect");
+      const s2 = document.getElementById("clienteRelatorio");
+      s1.innerHTML = "";
+      s2.innerHTML = "";
+      clientesCache.forEach(c => {
+        s1.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+        s2.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
       });
+      renderListaClientes();
+    }
+
+    function renderListaClientes() {
+      const el = document.getElementById("listaClientes");
+      if (!clientesCache.length) {
+        el.innerHTML = `<div class="empty-state"><div class="icon">👤</div><p>Nenhum cliente cadastrado.</p></div>`;
+        el.style = "";
+        return;
+      }
+      el.className = "lista-registos-wrap";
+      el.innerHTML = clientesCache.map(c => `
+        <div class="item-row">
+          <div class="item-left">
+            <div class="item-icon" style="background:var(--accent-dim);color:var(--accent);font-weight:600;font-size:13px;">
+              ${c.nome.charAt(0).toUpperCase()}
+            </div>
+            <span class="item-name">${c.nome}</span>
+          </div>
+        </div>
+      `).join("");
     }
 
     async function carregarProdutos() {
       const snapshot = await getDocs(collection(db, "produtos"));
-      const select = document.getElementById("produtoSelect");
-      select.innerHTML = "";
+      produtosCache = [];
+      snapshot.forEach(d => produtosCache.push({ id: d.id, ...d.data() }));
 
-      snapshot.forEach((docItem) => {
-        const produto = docItem.data();
-        const option = document.createElement("option");
-        option.value = docItem.id;
-        option.textContent = produto.nome;
-        select.appendChild(option);
+      const s = document.getElementById("produtoSelect");
+      s.innerHTML = "";
+      produtosCache.forEach(p => {
+        s.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
       });
+      renderListaProdutos();
     }
 
-    // ── Cadastros ────────────────────────────────────────────────────────────
+    function renderListaProdutos() {
+      const el = document.getElementById("listaProdutos");
+      if (!produtosCache.length) {
+        el.innerHTML = `<div class="empty-state"><div class="icon">📦</div><p>Nenhum produto cadastrado.</p></div>`;
+        el.style = "";
+        return;
+      }
+      el.className = "lista-registos-wrap";
+      el.innerHTML = produtosCache.map(p => `
+        <div class="item-row">
+          <div class="item-left">
+            <div class="item-icon">📦</div>
+            <span class="item-name">${p.nome}</span>
+          </div>
+        </div>
+      `).join("");
+    }
 
-    window.cadastrarCliente = async function () {
+    window.cadastrarCliente = async function() {
       const nome = document.getElementById("nomeCliente").value.trim();
-      if (!nome) { alert("Digite o nome do cliente"); return; }
-
+      if (!nome) { showToast("Digite o nome do cliente", "error"); return; }
       await addDoc(collection(db, "clientes"), { nome, criadoEm: new Date().toISOString() });
-      alert("Cliente cadastrado!");
       document.getElementById("nomeCliente").value = "";
       await carregarClientes();
+      showToast("Cliente cadastrado com sucesso!");
     };
 
-    window.cadastrarProduto = async function () {
+    window.cadastrarProduto = async function() {
       const nome = document.getElementById("nomeProduto").value.trim();
-      if (!nome) { alert("Digite o nome do produto"); return; }
-
+      if (!nome) { showToast("Digite o nome do produto", "error"); return; }
       await addDoc(collection(db, "produtos"), { nome, criadoEm: new Date().toISOString() });
-      alert("Produto cadastrado!");
       document.getElementById("nomeProduto").value = "";
       await carregarProdutos();
+      showToast("Produto cadastrado com sucesso!");
     };
 
-    // ── Multi-produto ────────────────────────────────────────────────────────
+    window.adicionarItem = function() {
+      const cs = document.getElementById("clienteSelect");
+      const ps = document.getElementById("produtoSelect");
+      const pi = document.getElementById("peso");
 
-    window.adicionarItem = function () {
-      const clienteSelect = document.getElementById("clienteSelect");
-      const produtoSelect = document.getElementById("produtoSelect");
-      const pesoInput = document.getElementById("peso");
+      if (!cs.value) { showToast("Cadastre um cliente primeiro", "error"); return; }
+      if (!ps.value) { showToast("Cadastre um produto primeiro", "error"); return; }
 
-      if (!clienteSelect.value) { alert("Cadastre um cliente primeiro"); return; }
-      if (!produtoSelect.value) { alert("Cadastre um produto primeiro"); return; }
+      const peso = parseFloat(pi.value);
+      if (isNaN(peso) || peso <= 0) { showToast("Digite um peso válido", "error"); return; }
 
-      const peso = parseFloat(pesoInput.value);
-      if (isNaN(peso) || peso <= 0) { alert("Digite um peso válido"); return; }
-
-      const item = {
-        produtoId: produtoSelect.value,
-        produtoNome: produtoSelect.selectedOptions[0].textContent,
+      itensParaSalvar.push({
+        produtoId: ps.value,
+        produtoNome: ps.selectedOptions[0].textContent,
         peso
-      };
-
-      itensParaSalvar.push(item);
-      pesoInput.value = "";
-
-      renderizarLista();
+      });
+      pi.value = "";
+      renderItens();
     };
 
-    function renderizarLista() {
-      const lista = document.getElementById("listaItens");
+    function renderItens() {
+      const wrapper = document.getElementById("listaItens");
       const conteudo = document.getElementById("itensConteudo");
       const contador = document.getElementById("contadorItens");
       const totalEl = document.getElementById("totalPeso");
       const btnSalvar = document.getElementById("btnSalvar");
 
-      if (itensParaSalvar.length === 0) {
-        lista.style.display = "none";
-        btnSalvar.disabled = true;
-        return;
-      }
+      if (!itensParaSalvar.length) { wrapper.style.display = "none"; return; }
 
-      lista.style.display = "block";
+      wrapper.style.display = "block";
       btnSalvar.disabled = false;
-      contador.textContent = `${itensParaSalvar.length} item(s)`;
+      contador.textContent = itensParaSalvar.length;
 
-      let html = "";
       let total = 0;
-
-      itensParaSalvar.forEach((item, idx) => {
+      conteudo.innerHTML = itensParaSalvar.map((item, idx) => {
         total += item.peso;
-        html += `
-          <div class="item-linha">
-            <div class="item-info">
-              <span class="item-produto">${item.produtoNome}</span>
-              <span class="item-peso">${item.peso.toFixed(2)} kg</span>
+        return `
+          <div class="item-row">
+            <div class="item-left">
+              <div class="item-icon">📦</div>
+              <div>
+                <div class="item-name">${item.produtoNome}</div>
+                <div class="item-peso-tag">${item.peso.toFixed(2)} kg</div>
+              </div>
             </div>
-            <button class="btn-remover" onclick="removerItem(${idx})">✕</button>
+            <button class="btn-remove" onclick="removerItem(${idx})" title="Remover">✕</button>
           </div>
         `;
-      });
+      }).join("");
 
-      conteudo.innerHTML = html;
       totalEl.textContent = `${total.toFixed(2)} kg`;
     }
 
-    window.removerItem = function (idx) {
+    window.removerItem = function(idx) {
       itensParaSalvar.splice(idx, 1);
-      renderizarLista();
+      renderItens();
     };
 
-    // ── Salvar todos os itens no Firebase ────────────────────────────────────
+    window.salvarPeso = async function() {
+      const cs = document.getElementById("clienteSelect");
+      if (!cs.value) { showToast("Selecione um cliente", "error"); return; }
+      if (!itensParaSalvar.length) { showToast("Adicione pelo menos um produto", "error"); return; }
 
-    window.salvarPeso = async function () {
-      const clienteSelect = document.getElementById("clienteSelect");
+      const clienteId = cs.value;
+      const clienteNome = cs.selectedOptions[0].textContent;
+      const agora = new Date();
+      const data = agora.toISOString().split("T")[0];
+      const timestamp = agora.toISOString();
+      const mes = agora.getMonth() + 1;
+      const ano = agora.getFullYear();
 
-      if (!clienteSelect.value) { alert("Selecione um cliente"); return; }
-      if (itensParaSalvar.length === 0) { alert("Adicione pelo menos um produto"); return; }
-
-      const clienteId = clienteSelect.value;
-      const clienteNome = clienteSelect.selectedOptions[0].textContent;
-
-      const hoje = new Date();
-      const data = hoje.toISOString().split("T")[0];
-      const timestamp = hoje.toISOString();
-      const mes = hoje.getMonth() + 1;
-      const ano = hoje.getFullYear();
-
-      // Grava um documento por produto (mantém compatibilidade com o relatório)
-      const promessas = itensParaSalvar.map((item) =>
+      await Promise.all(itensParaSalvar.map(item =>
         addDoc(collection(db, "registros"), {
-          clienteId,
-          clienteNome,
-          produtoId: item.produtoId,
-          produtoNome: item.produtoNome,
-          peso: item.peso,
-          data,
-          timestamp,
-          mes,
-          ano
+          clienteId, clienteNome,
+          produtoId: item.produtoId, produtoNome: item.produtoNome,
+          peso: item.peso, data, timestamp, mes, ano
         })
-      );
+      ));
 
-      await Promise.all(promessas);
-
-      alert(`${itensParaSalvar.length} produto(s) registado(s) com sucesso!`);
-
-      // Limpa a lista
+      const n = itensParaSalvar.length;
       itensParaSalvar = [];
-      renderizarLista();
+      renderItens();
       document.getElementById("peso").value = "";
+      showToast(`${n} produto(s) guardado(s) com sucesso!`);
     };
 
-    // ── Relatório mensal ─────────────────────────────────────────────────────
-
-    window.carregarRelatorio = async function () {
+    window.carregarRelatorio = async function() {
       const clienteId = document.getElementById("clienteRelatorio").value;
-      if (!clienteId) { alert("Selecione um cliente"); return; }
+      if (!clienteId) { showToast("Selecione um cliente", "error"); return; }
 
-      const hoje = new Date();
-      const mes = hoje.getMonth() + 1;
-      const ano = hoje.getFullYear();
+      const agora = new Date();
+      const mes = agora.getMonth() + 1;
+      const ano = agora.getFullYear();
 
       const q = query(
         collection(db, "registros"),
@@ -478,66 +785,70 @@
       );
 
       const snapshot = await getDocs(q);
-
-      let total = 0;
-      let totaisProdutos = {};
-      let htmlRegistros = "";
+      const resultado = document.getElementById("resultado");
 
       if (snapshot.empty) {
-        document.getElementById("resultado").innerHTML = `
-          <div class="vazio">Nenhum registo encontrado neste mês.</div>
+        resultado.innerHTML = `
+          <div class="report-box" style="padding:40px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:10px;">📭</div>
+            <div style="color:var(--text-3);font-size:14px;">Nenhum registo encontrado neste mês.</div>
+          </div>
         `;
         return;
       }
 
-      snapshot.forEach((docItem) => {
-        const item = docItem.data();
+      let total = 0;
+      const porProduto = {};
+      const registos = [];
+
+      snapshot.forEach(d => {
+        const item = d.data();
         total += item.peso;
-
-        if (!totaisProdutos[item.produtoNome]) {
-          totaisProdutos[item.produtoNome] = 0;
-        }
-        totaisProdutos[item.produtoNome] += item.peso;
-
-        htmlRegistros += `
-          <div class="registro">
-            <strong>Data:</strong> ${item.data}<br>
-            <strong>Produto:</strong> ${item.produtoNome}<br>
-            <strong>Peso:</strong> ${item.peso.toFixed(2)} kg
-          </div>
-        `;
+        porProduto[item.produtoNome] = (porProduto[item.produtoNome] || 0) + item.peso;
+        registos.push(item);
       });
 
-      let resumoProdutos = "";
-      for (const produto in totaisProdutos) {
-        resumoProdutos += `
-          <div class="registro">
-            <strong>${produto}</strong>: ${totaisProdutos[produto].toFixed(2)} kg
-          </div>
-        `;
-      }
+      registos.sort((a, b) => b.data.localeCompare(a.data));
 
-      document.getElementById("resultado").innerHTML = `
-        <h3>Total Geral do Mês: ${total.toFixed(2)} kg</h3>
-        <br>
-        <h3>Total por Produto</h3>
-        ${resumoProdutos}
-        <br>
-        <h3>Registos</h3>
-        ${htmlRegistros}
+      const nomeMes = agora.toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
+
+      const resumoHTML = Object.entries(porProduto).map(([nome, peso]) => `
+        <div class="report-row">
+          <span class="report-row-label">${nome}</span>
+          <span class="report-row-value">${peso.toFixed(2)} kg</span>
+        </div>
+      `).join("");
+
+      const registosHTML = registos.map(r => `
+        <div class="report-row">
+          <div>
+            <div class="report-row-label">${r.produtoNome}</div>
+            <div class="report-date">${r.data}</div>
+          </div>
+          <span class="report-row-value">${r.peso.toFixed(2)} kg</span>
+        </div>
+      `).join("");
+
+      resultado.innerHTML = `
+        <div class="report-box">
+          <div class="report-header">
+            <div class="report-header-label">Total — ${nomeMes}</div>
+            <div class="report-total">${total.toFixed(2)}<span> kg</span></div>
+          </div>
+          <div class="report-section-title">Por produto</div>
+          ${resumoHTML}
+          <div class="report-section-title" style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">Registos</div>
+          ${registosHTML}
+        </div>
       `;
     };
 
-    // ── Iniciar ──────────────────────────────────────────────────────────────
-
-    async function iniciarSistema() {
+    async function init() {
       await carregarClientes();
       await carregarProdutos();
     }
 
-    iniciarSistema();
-
+    init();
   </script>
-
 </body>
 </html>
