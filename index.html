@@ -60,7 +60,11 @@
     }
 
     button:hover {
-      opacity: 0.95;
+      opacity: 0.85;
+    }
+
+    .btn-secundario {
+      background: #374151;
     }
 
     .resultado {
@@ -84,6 +88,122 @@
       color: #6b7280;
       padding: 15px;
     }
+
+    /* ── Multi-produto ── */
+    .produto-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: flex-start;
+    }
+
+    .produto-row select,
+    .produto-row input {
+      margin-top: 0;
+      flex: 1;
+    }
+
+    .produto-row input[type="number"] {
+      max-width: 110px;
+      flex: none;
+    }
+
+    .btn-adicionar {
+      width: auto;
+      padding: 14px 18px;
+      margin-top: 0;
+      flex-shrink: 0;
+      font-size: 22px;
+      line-height: 1;
+      background: #111827;
+      border-radius: 10px;
+    }
+
+    .lista-itens {
+      margin-top: 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .lista-itens-header {
+      background: #f3f4f6;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #374151;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .item-linha {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 15px;
+    }
+
+    .item-linha:first-of-type {
+      border-top: none;
+    }
+
+    .item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .item-produto {
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .item-peso {
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .btn-remover {
+      width: auto;
+      padding: 6px 12px;
+      margin-top: 0;
+      background: #ef4444;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .btn-remover:hover {
+      background: #dc2626;
+      opacity: 1;
+    }
+
+    .total-linha {
+      background: #f9fafb;
+      padding: 10px 12px;
+      border-top: 2px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .btn-salvar {
+      margin-top: 14px;
+      background: #059669;
+    }
+
+    .btn-salvar:hover {
+      background: #047857;
+      opacity: 1;
+    }
+
+    .btn-salvar:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -92,22 +212,14 @@
 
     <div class="card">
       <h2>Cadastrar Cliente</h2>
-
       <input type="text" id="nomeCliente" placeholder="Nome do cliente" />
-
-      <button onclick="cadastrarCliente()">
-        Cadastrar Cliente
-      </button>
+      <button onclick="cadastrarCliente()">Cadastrar Cliente</button>
     </div>
 
     <div class="card">
       <h2>Cadastrar Produto</h2>
-
       <input type="text" id="nomeProduto" placeholder="Nome do produto" />
-
-      <button onclick="cadastrarProduto()">
-        Cadastrar Produto
-      </button>
+      <button onclick="cadastrarProduto()">Cadastrar Produto</button>
     </div>
 
     <div class="card">
@@ -115,24 +227,35 @@
 
       <select id="clienteSelect"></select>
 
-      <select id="produtoSelect"></select>
+      <!-- Linha de adição de produto -->
+      <div class="produto-row">
+        <select id="produtoSelect"></select>
+        <input type="number" id="peso" placeholder="Peso" step="0.01" min="0.01" />
+        <button class="btn-adicionar" onclick="adicionarItem()" title="Adicionar produto">+</button>
+      </div>
 
-      <input type="number" id="peso" placeholder="Peso" step="0.01" />
+      <!-- Lista de itens adicionados -->
+      <div id="listaItens" style="display:none;" class="lista-itens">
+        <div class="lista-itens-header">
+          <span>Produtos adicionados</span>
+          <span id="contadorItens">0 item(s)</span>
+        </div>
+        <div id="itensConteudo"></div>
+        <div class="total-linha">
+          <span>Total</span>
+          <span id="totalPeso">0.00</span>
+        </div>
+      </div>
 
-      <button onclick="salvarPeso()">
-        Salvar Peso
+      <button class="btn-salvar" id="btnSalvar" onclick="salvarPeso()" disabled>
+        Salvar Registo
       </button>
     </div>
 
     <div class="card">
       <h2>Relatório Mensal</h2>
-
       <select id="clienteRelatorio"></select>
-
-      <button onclick="carregarRelatorio()">
-        Consultar
-      </button>
-
+      <button onclick="carregarRelatorio()">Consultar</button>
       <div id="resultado" class="resultado"></div>
     </div>
 
@@ -141,7 +264,6 @@
   <script type="module">
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
     import {
       getFirestore,
       collection,
@@ -164,10 +286,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Estado da lista de itens a registar
+    let itensParaSalvar = [];
+
+    // ── Carregamento de selects ──────────────────────────────────────────────
+
     async function carregarClientes() {
-
       const snapshot = await getDocs(collection(db, "clientes"));
-
       const select = document.getElementById("clienteSelect");
       const selectRelatorio = document.getElementById("clienteRelatorio");
 
@@ -175,7 +300,6 @@
       selectRelatorio.innerHTML = "";
 
       snapshot.forEach((docItem) => {
-
         const cliente = docItem.data();
 
         const option1 = document.createElement("option");
@@ -192,122 +316,155 @@
     }
 
     async function carregarProdutos() {
-
       const snapshot = await getDocs(collection(db, "produtos"));
-
       const select = document.getElementById("produtoSelect");
-
       select.innerHTML = "";
 
       snapshot.forEach((docItem) => {
-
         const produto = docItem.data();
-
         const option = document.createElement("option");
         option.value = docItem.id;
         option.textContent = produto.nome;
-
         select.appendChild(option);
       });
     }
 
+    // ── Cadastros ────────────────────────────────────────────────────────────
+
     window.cadastrarCliente = async function () {
-
       const nome = document.getElementById("nomeCliente").value.trim();
+      if (!nome) { alert("Digite o nome do cliente"); return; }
 
-      if (!nome) {
-        alert("Digite o nome do cliente");
-        return;
-      }
-
-      await addDoc(collection(db, "clientes"), {
-        nome,
-        criadoEm: new Date().toISOString()
-      });
-
+      await addDoc(collection(db, "clientes"), { nome, criadoEm: new Date().toISOString() });
       alert("Cliente cadastrado!");
-
       document.getElementById("nomeCliente").value = "";
-
       await carregarClientes();
     };
 
     window.cadastrarProduto = async function () {
-
       const nome = document.getElementById("nomeProduto").value.trim();
+      if (!nome) { alert("Digite o nome do produto"); return; }
 
-      if (!nome) {
-        alert("Digite o nome do produto");
-        return;
-      }
-
-      await addDoc(collection(db, "produtos"), {
-        nome,
-        criadoEm: new Date().toISOString()
-      });
-
+      await addDoc(collection(db, "produtos"), { nome, criadoEm: new Date().toISOString() });
       alert("Produto cadastrado!");
-
       document.getElementById("nomeProduto").value = "";
-
       await carregarProdutos();
     };
 
-    window.salvarPeso = async function () {
+    // ── Multi-produto ────────────────────────────────────────────────────────
 
+    window.adicionarItem = function () {
       const clienteSelect = document.getElementById("clienteSelect");
       const produtoSelect = document.getElementById("produtoSelect");
+      const pesoInput = document.getElementById("peso");
 
-      if (!clienteSelect.value) {
-        alert("Cadastre um cliente primeiro");
+      if (!clienteSelect.value) { alert("Cadastre um cliente primeiro"); return; }
+      if (!produtoSelect.value) { alert("Cadastre um produto primeiro"); return; }
+
+      const peso = parseFloat(pesoInput.value);
+      if (isNaN(peso) || peso <= 0) { alert("Digite um peso válido"); return; }
+
+      const item = {
+        produtoId: produtoSelect.value,
+        produtoNome: produtoSelect.selectedOptions[0].textContent,
+        peso
+      };
+
+      itensParaSalvar.push(item);
+      pesoInput.value = "";
+
+      renderizarLista();
+    };
+
+    function renderizarLista() {
+      const lista = document.getElementById("listaItens");
+      const conteudo = document.getElementById("itensConteudo");
+      const contador = document.getElementById("contadorItens");
+      const totalEl = document.getElementById("totalPeso");
+      const btnSalvar = document.getElementById("btnSalvar");
+
+      if (itensParaSalvar.length === 0) {
+        lista.style.display = "none";
+        btnSalvar.disabled = true;
         return;
       }
 
-      if (!produtoSelect.value) {
-        alert("Cadastre um produto primeiro");
-        return;
-      }
+      lista.style.display = "block";
+      btnSalvar.disabled = false;
+      contador.textContent = `${itensParaSalvar.length} item(s)`;
+
+      let html = "";
+      let total = 0;
+
+      itensParaSalvar.forEach((item, idx) => {
+        total += item.peso;
+        html += `
+          <div class="item-linha">
+            <div class="item-info">
+              <span class="item-produto">${item.produtoNome}</span>
+              <span class="item-peso">${item.peso.toFixed(2)} kg</span>
+            </div>
+            <button class="btn-remover" onclick="removerItem(${idx})">✕</button>
+          </div>
+        `;
+      });
+
+      conteudo.innerHTML = html;
+      totalEl.textContent = `${total.toFixed(2)} kg`;
+    }
+
+    window.removerItem = function (idx) {
+      itensParaSalvar.splice(idx, 1);
+      renderizarLista();
+    };
+
+    // ── Salvar todos os itens no Firebase ────────────────────────────────────
+
+    window.salvarPeso = async function () {
+      const clienteSelect = document.getElementById("clienteSelect");
+
+      if (!clienteSelect.value) { alert("Selecione um cliente"); return; }
+      if (itensParaSalvar.length === 0) { alert("Adicione pelo menos um produto"); return; }
 
       const clienteId = clienteSelect.value;
       const clienteNome = clienteSelect.selectedOptions[0].textContent;
 
-      const produtoId = produtoSelect.value;
-      const produtoNome = produtoSelect.selectedOptions[0].textContent;
-
-      const peso = parseFloat(document.getElementById("peso").value);
-
-      if (isNaN(peso) || peso <= 0) {
-        alert("Digite um peso válido");
-        return;
-      }
-
       const hoje = new Date();
+      const data = hoje.toISOString().split("T")[0];
+      const timestamp = hoje.toISOString();
+      const mes = hoje.getMonth() + 1;
+      const ano = hoje.getFullYear();
 
-      await addDoc(collection(db, "registros"), {
-        clienteId,
-        clienteNome,
-        produtoId,
-        produtoNome,
-        peso,
-        data: hoje.toISOString().split("T")[0],
-        timestamp: hoje.toISOString(),
-        mes: hoje.getMonth() + 1,
-        ano: hoje.getFullYear()
-      });
+      // Grava um documento por produto (mantém compatibilidade com o relatório)
+      const promessas = itensParaSalvar.map((item) =>
+        addDoc(collection(db, "registros"), {
+          clienteId,
+          clienteNome,
+          produtoId: item.produtoId,
+          produtoNome: item.produtoNome,
+          peso: item.peso,
+          data,
+          timestamp,
+          mes,
+          ano
+        })
+      );
 
-      alert("Peso salvo com sucesso!");
+      await Promise.all(promessas);
 
+      alert(`${itensParaSalvar.length} produto(s) registado(s) com sucesso!`);
+
+      // Limpa a lista
+      itensParaSalvar = [];
+      renderizarLista();
       document.getElementById("peso").value = "";
     };
 
+    // ── Relatório mensal ─────────────────────────────────────────────────────
+
     window.carregarRelatorio = async function () {
-
       const clienteId = document.getElementById("clienteRelatorio").value;
-
-      if (!clienteId) {
-        alert("Selecione um cliente");
-        return;
-      }
+      if (!clienteId) { alert("Selecione um cliente"); return; }
 
       const hoje = new Date();
       const mes = hoje.getMonth() + 1;
@@ -328,60 +485,50 @@
 
       if (snapshot.empty) {
         document.getElementById("resultado").innerHTML = `
-          <div class="vazio">
-            Nenhum registro encontrado neste mês.
-          </div>
+          <div class="vazio">Nenhum registo encontrado neste mês.</div>
         `;
         return;
       }
 
       snapshot.forEach((docItem) => {
-
         const item = docItem.data();
-
         total += item.peso;
 
         if (!totaisProdutos[item.produtoNome]) {
           totaisProdutos[item.produtoNome] = 0;
         }
-
         totaisProdutos[item.produtoNome] += item.peso;
 
         htmlRegistros += `
           <div class="registro">
             <strong>Data:</strong> ${item.data}<br>
             <strong>Produto:</strong> ${item.produtoNome}<br>
-            <strong>Peso:</strong> ${item.peso.toFixed(2)}
+            <strong>Peso:</strong> ${item.peso.toFixed(2)} kg
           </div>
         `;
       });
 
       let resumoProdutos = "";
-
       for (const produto in totaisProdutos) {
         resumoProdutos += `
           <div class="registro">
-            <strong>${produto}</strong>: ${totaisProdutos[produto].toFixed(2)}
+            <strong>${produto}</strong>: ${totaisProdutos[produto].toFixed(2)} kg
           </div>
         `;
       }
 
-      const htmlFinal = `
-        <h3>Total Geral do Mês: ${total.toFixed(2)}</h3>
-
+      document.getElementById("resultado").innerHTML = `
+        <h3>Total Geral do Mês: ${total.toFixed(2)} kg</h3>
         <br>
-
         <h3>Total por Produto</h3>
         ${resumoProdutos}
-
         <br>
-
-        <h3>Registros</h3>
+        <h3>Registos</h3>
         ${htmlRegistros}
       `;
-
-      document.getElementById("resultado").innerHTML = htmlFinal;
     };
+
+    // ── Iniciar ──────────────────────────────────────────────────────────────
 
     async function iniciarSistema() {
       await carregarClientes();
