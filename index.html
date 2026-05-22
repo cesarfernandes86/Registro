@@ -561,7 +561,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore, collection, addDoc, getDocs, query, where
+      getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -962,7 +962,7 @@
       const registos = [];
 
       snapshot.forEach(d => {
-        const item = d.data();
+        const item = { id: d.id, ...d.data() };
         total += item.peso;
         porProduto[item.produtoNome] = (porProduto[item.produtoNome] || 0) + item.peso;
         registos.push(item);
@@ -985,7 +985,10 @@
             <div class="report-row-label">${r.produtoNome}</div>
             <div class="report-date">${r.data}</div>
           </div>
-          <span class="report-row-value">${r.peso.toFixed(2)} kg</span>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="report-row-value">${r.peso.toFixed(2)} kg</span>
+            <button class="btn-remove" onclick="excluirRegisto('${r.id}')" title="Excluir registo">✕</button>
+          </div>
         </div>
       `).join("");
 
@@ -1009,6 +1012,24 @@
     }
 
     init();
+  
+    window.excluirRegisto = async function(registoId) {
+      if (!registoId) return;
+
+      const confirmar = confirm("Tem certeza que deseja excluir este registo? Esta ação também apaga no Firebase.");
+      if (!confirmar) return;
+
+      try {
+        await deleteDoc(doc(db, "registros", registoId));
+        showToast("Registo excluído com sucesso!");
+        await carregarRelatorio();
+      } catch (erro) {
+        console.error("Erro ao excluir registo:", erro);
+        showToast("Erro ao excluir o registo", "error");
+      }
+    };
+
+
   </script>
 </body>
 </html>
