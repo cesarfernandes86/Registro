@@ -213,6 +213,7 @@
         <button class="tab-btn" onclick="setTab('clientes')"><span class="tab-dot">👥</span> Clientes</button>
         <button class="tab-btn" onclick="setTab('produtos')"><span class="tab-dot">▣</span> Produtos</button>
         <button class="tab-btn" onclick="setTab('relatorio')"><span class="tab-dot">▥</span> Relatório</button>
+        <button class="tab-btn" onclick="setTab('laundry')"><span class="tab-dot">€</span> Laundry</button>
       </nav>
 
       <div class="side-footer">
@@ -318,6 +319,27 @@
             <div id="resultado"></div>
           </div></div>
         </div>
+
+        <div class="panel" id="panel-laundry">
+          <div class="page-head"><div><div class="section-title">Laundry</div><div class="section-desc">Registe valores diários e consulte o total mensal.</div></div></div>
+          <div class="card"><div class="card-pad">
+            <div class="grid-3">
+              <div class="field"><label>Data</label><input type="date" id="laundryData" /></div>
+              <div class="field"><label>Valor (€)</label><input type="number" id="laundryValor" placeholder="Ex: 25,00" step="0.01" min="0" /></div>
+              <div class="field"><label>Observação</label><input type="text" id="laundryObs" placeholder="Opcional" /></div>
+            </div>
+            <button class="btn btn-primary" onclick="guardarLaundry()">＋ Guardar Valor</button>
+            <div class="divider"></div>
+            <div class="grid-2">
+              <div class="field"><label>Mês</label><input type="month" id="laundryMes" /></div>
+              <div class="field"><label>&nbsp;</label><button class="btn btn-secondary" onclick="carregarLaundry()">Consultar</button></div>
+            </div>
+            <div class="action-row">
+              <button class="btn btn-ghost" onclick="exportarLaundryCSV()">Exportar CSV</button>
+            </div>
+            <div id="laundryResultado"></div>
+          </div></div>
+        </div>
       </div>
     </main>
   </div>
@@ -348,6 +370,8 @@
     let produtosCache = [];
     let relatorioAtual = [];
     let ultimoResumoRelatorio = null;
+    let laundryAtual = [];
+    let ultimoResumoLaundry = null;
     const IVA_RATE = 0.23;
 
     const hoje = new Date();
@@ -384,6 +408,11 @@
       return `€ ${(Number(valor) || 0).toFixed(2)}`;
     }
 
+    function dataInputLocal(data = new Date()) {
+      const local = new Date(data.getTime() - (data.getTimezoneOffset() * 60000));
+      return local.toISOString().split("T")[0];
+    }
+
     function quantidade(valor) {
       return `${(Number(valor) || 0).toFixed(2)} kg`;
     }
@@ -409,7 +438,7 @@
       document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.getElementById("panel-" + id).classList.add("active");
-      const order = ["registar","clientes","produtos","relatorio"];
+      const order = ["registar","clientes","produtos","relatorio","laundry"];
       document.querySelectorAll(".tab-btn")[order.indexOf(id)].classList.add("active");
     };
 
@@ -1132,9 +1161,166 @@
       janela.document.close();
     };
 
+    function setLaundryLoading(texto) {
+      const resultado = document.getElementById("laundryResultado");
+      if (resultado) {
+        resultado.innerHTML = `<div class="report-box" style="padding:32px;text-align:center;color:var(--text-3);">${escapeHTML(texto)}</div>`;
+      }
+    }
+
+    window.guardarLaundry = async function() {
+      const data = document.getElementById("laundryData").value;
+      const valor = parseValor(document.getElementById("laundryValor").value);
+      const observacao = document.getElementById("laundryObs").value.trim();
+      if (!data) { showToast("Selecione a data", "error"); return; }
+      if (isNaN(valor) || valor < 0) { showToast("Digite um valor válido", "error"); return; }
+
+      const dataObj = new Date(`${data}T00:00:00`);
+      const mes = dataObj.getMonth() + 1;
+      const ano = dataObj.getFullYear();
+      const timestamp = new Date().toISOString();
+      try {
+        await addDoc(collection(db, "laundry"), {
+          data,
+          valor,
+          observacao,
+          mes,
+          ano,
+          criadoEm: timestamp
+        });
+        document.getElementById("laundryValor").value = "";
+        document.getElementById("laundryObs").value = "";
+        showToast("Valor guardado com sucesso!");
+        const mesAtual = document.getElementById("laundryMes").value;
+        const mesDoRegisto = `${ano}-${String(mes).padStart(2, "0")}`;
+        if (mesAtual === mesDoRegisto) await window.carregarLaundry();
+      } catch (erro) {
+        console.error("Erro ao guardar Laundry:", erro);
+        showToast("Erro ao guardar valor", "error");
+      }
+    };
+
+    window.carregarLaundry = async function() {
+      const mesSelecionado = document.getElementById("laundryMes").value;
+      if (!mesSelecionado) { showToast("Selecione o mês", "error"); return; }
+      const [anoTexto, mesTexto] = mesSelecionado.split("-");
+      const mes = Number(mesTexto);
+      const ano = Number(anoTexto);
+      setLaundryLoading("A carregar histórico...");
+
+      const q = query(
+        collection(db, "laundry"),
+        where("mes", "==", mes),
+        where("ano", "==", ano)
+      );
+
+      let snapshot;
+      try {
+        snapshot = await getDocs(q);
+      } catch (erro) {
+        console.error("Erro ao carregar Laundry:", erro);
+        showToast("Erro ao carregar histórico", "error");
+        setLaundryLoading("Não foi possível carregar o histórico.");
+        return;
+      }
+
+      const resultado = document.getElementById("laundryResultado");
+      if (snapshot.empty) {
+        laundryAtual = [];
+        ultimoResumoLaundry = null;
+        resultado.innerHTML = `
+          <div class="report-box" style="padding:40px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:10px;">📭</div>
+            <div style="color:var(--text-3);font-size:14px;">Nenhum valor registado neste mês.</div>
+          </div>
+        `;
+        return;
+      }
+
+      const registos = [];
+      let total = 0;
+      snapshot.forEach(d => {
+        const item = { id: d.id, ...d.data() };
+        item.valor = Number(item.valor || 0);
+        total += item.valor;
+        registos.push(item);
+      });
+      registos.sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
+      laundryAtual = registos;
+      ultimoResumoLaundry = { mes, ano, total, quantidade: registos.length };
+
+      const nomeMes = new Date(ano, mes - 1, 1).toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
+      const registosHTML = registos.map(r => `
+        <div class="report-row">
+          <div>
+            <div class="report-row-label">${escapeHTML(r.data)}</div>
+            <div class="report-date">${escapeHTML(r.observacao || "Sem observação")}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="report-row-value">${moeda(r.valor)}</span>
+            <button class="btn-remove" onclick="excluirLaundry('${jsString(r.id)}')" title="Excluir registo">✕</button>
+          </div>
+        </div>
+      `).join("");
+
+      resultado.innerHTML = `
+        <div class="report-box">
+          <div class="report-header">
+            <div class="report-header-label">Laundry — ${escapeHTML(nomeMes)}</div>
+            <div class="report-total">${moeda(total)}<span> total mensal</span></div>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card"><div class="metric-label">Total</div><div class="metric-value">${moeda(total)}</div></div>
+            <div class="metric-card"><div class="metric-label">Registos</div><div class="metric-value">${registos.length}</div></div>
+            <div class="metric-card"><div class="metric-label">Média</div><div class="metric-value">${moeda(total / registos.length)}</div></div>
+            <div class="metric-card"><div class="metric-label">Mês</div><div class="metric-value">${String(mes).padStart(2, "0")}/${ano}</div></div>
+          </div>
+          <div class="report-section-title">Histórico</div>
+          ${registosHTML}
+        </div>
+      `;
+    };
+
+    window.excluirLaundry = async function(registoId) {
+      if (!registoId) return;
+      const confirmar = confirm("Tem certeza que deseja excluir este registo de Laundry?");
+      if (!confirmar) return;
+      try {
+        await deleteDoc(doc(db, "laundry", registoId));
+        showToast("Registo excluído com sucesso!");
+        await window.carregarLaundry();
+      } catch (erro) {
+        console.error("Erro ao excluir Laundry:", erro);
+        showToast("Erro ao excluir registo", "error");
+      }
+    };
+
+    window.exportarLaundryCSV = function() {
+      if (!laundryAtual.length) { showToast("Consulte o histórico primeiro", "error"); return; }
+      const linhas = [
+        ["Data", "Valor", "Observação"].map(csvValor).join(";"),
+        ...laundryAtual.map(r => [
+          r.data,
+          Number(r.valor || 0).toFixed(2),
+          r.observacao || ""
+        ].map(csvValor).join(";"))
+      ];
+      const blob = new Blob(["\uFEFF" + linhas.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `laundry-${document.getElementById("laundryMes").value}.csv`.replace(/[\\/:*?"<>|]+/g, "-");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    };
+
     async function init() {
       const agora = new Date();
       document.getElementById("mesRelatorio").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+      document.getElementById("laundryMes").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+      document.getElementById("laundryData").value = dataInputLocal(agora);
       await carregarClientes();
       await carregarProdutos();
     }
