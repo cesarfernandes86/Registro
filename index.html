@@ -81,10 +81,6 @@
     .tab-dot { width: 26px; height: 26px; border-radius: 9px; display:inline-flex; align-items:center; justify-content:center; background: rgba(47,183,195,.10); color: var(--brand-dark); flex-shrink:0; }
     .tab-btn.active .tab-dot { background: rgba(255,255,255,.20); color: #fff; }
 
-    .side-footer { margin-top: auto; background: rgba(255,255,255,.82); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-sm); }
-    .side-footer .today-label { font-weight: 800; color: var(--brand-dark); font-size: 14px; }
-    .side-footer .today-date { margin-top: 6px; color: var(--text-2); font-size: 14px; line-height: 1.35; }
-
     .main-area { min-width: 0; padding: 28px 32px; }
     .topbar { display:none; }
 
@@ -165,6 +161,26 @@
     .metric-card { border:1px solid var(--line); border-radius: var(--radius-md); padding:14px; background: #fbfeff; }
     .metric-label { font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; color:var(--text-3); }
     .metric-value { margin-top:6px; color:var(--brand-dark); font-weight:900; font-size:20px; font-family:'DM Mono', monospace; }
+    .chart-grid { display:grid; grid-template-columns: 1.35fr .9fr; gap:16px; padding:16px; background:#fff; border-bottom:1px solid var(--line); }
+    .chart-panel { border:1px solid var(--line); border-radius: var(--radius-md); padding:16px; background:#fbfeff; min-width:0; }
+    .chart-title { font-size:13px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; color:var(--brand-dark); margin-bottom:14px; }
+    .bar-row { display:grid; grid-template-columns: minmax(92px, .9fr) 1.8fr minmax(82px, auto); gap:10px; align-items:center; margin:10px 0; }
+    .bar-label { color:var(--text-1); font-weight:800; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bar-track { height:14px; background:#eaf5f7; border-radius:999px; overflow:hidden; border:1px solid #d8edf2; }
+    .bar-fill { height:100%; min-width:4px; background:linear-gradient(90deg, var(--brand), #0f8fa0); border-radius:999px; }
+    .bar-fill.laundry { background:linear-gradient(90deg, #1aa184, #0c7563); }
+    .bar-value { font-family:'DM Mono', monospace; color:var(--text-2); font-size:13px; text-align:right; white-space:nowrap; }
+    .split-chart { display:flex; flex-direction:column; gap:14px; }
+    .split-total { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-md); background:#fff; }
+    .split-total strong { color:var(--brand-dark); font-size:20px; font-family:'DM Mono', monospace; }
+    .stack-bar { height:24px; display:flex; overflow:hidden; border-radius:999px; border:1px solid var(--line-strong); background:#eaf5f7; }
+    .stack-segment { min-width:0; height:100%; }
+    .stack-segment.services { background:linear-gradient(90deg, var(--brand), #0f8fa0); }
+    .stack-segment.laundry { background:linear-gradient(90deg, #1aa184, #0c7563); }
+    .legend-row { display:flex; gap:14px; flex-wrap:wrap; color:var(--text-2); font-size:14px; font-weight:800; }
+    .legend-dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; }
+    .legend-dot.services { background:var(--brand); }
+    .legend-dot.laundry { background:var(--green); }
     .report-section-title { padding:16px 20px 8px; display:block; }
     .report-date { font-size:13px; color:var(--text-3); margin-top:4px; }
     .empty-state { text-align:center; padding:42px 20px; color:var(--text-3); }
@@ -186,11 +202,12 @@
       .brand-logo { width: 86px; }
       .tab-nav { flex-direction:row; overflow-x:auto; padding-bottom:6px; }
       .tab-btn { white-space:nowrap; min-width:max-content; }
-      .side-footer { display:none; }
       .main-area { padding: 18px 14px 28px; }
       .page-head { flex-direction:column; }
       .date-pill { width:100%; justify-content:center; }
-      .grid-2, .grid-3, .row-add, .metrics-grid { grid-template-columns: 1fr; }
+      .grid-2, .grid-3, .row-add, .metrics-grid, .chart-grid { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 1fr; gap:6px; }
+      .bar-value { text-align:left; }
       .action-row { flex-direction:column; }
       .action-row .btn { width:100%; }
       .btn-add { width:100%; }
@@ -214,12 +231,10 @@
         <button class="tab-btn" onclick="setTab('produtos')"><span class="tab-dot">▣</span> Produtos</button>
         <button class="tab-btn" onclick="setTab('relatorio')"><span class="tab-dot">▥</span> Relatório</button>
         <button class="tab-btn" onclick="setTab('laundry')"><span class="tab-dot">€</span> Laundry</button>
+        <button class="tab-btn" onclick="setTab('dashboard')"><span class="tab-dot">▤</span> Dashboard</button>
+        <button class="tab-btn" onclick="setTab('caixa')"><span class="tab-dot">▧</span> Fluxo Caixa</button>
       </nav>
 
-      <div class="side-footer">
-        <div class="today-label">📅 Hoje</div>
-        <div class="today-date" id="dataHoje"></div>
-      </div>
     </aside>
 
     <main class="main-area">
@@ -304,6 +319,21 @@
           </div></div>
         </div>
 
+        <div class="panel" id="panel-dashboard">
+          <div class="page-head"><div><div class="section-title">Dashboard</div><div class="section-desc">Visão geral de serviços, clientes, faturação e Laundry por período.</div></div></div>
+          <div class="card"><div class="card-pad">
+            <div class="grid-3">
+              <div class="field"><label>Data inicial</label><input type="date" id="dashboardInicio" /></div>
+              <div class="field"><label>Data final</label><input type="date" id="dashboardFim" /></div>
+              <div class="field"><label>&nbsp;</label><button class="btn btn-secondary" onclick="carregarDashboard()">Consultar</button></div>
+            </div>
+            <div class="action-row">
+              <button class="btn btn-ghost" onclick="exportarDashboardCSV()">Exportar CSV</button>
+            </div>
+            <div id="dashboardResultado"></div>
+          </div></div>
+        </div>
+
         <div class="panel" id="panel-relatorio">
           <div class="page-head"><div><div class="section-title">Relatório Mensal</div><div class="section-desc">Consulte o resumo de quantidade e faturação por mês.</div></div></div>
           <div class="card"><div class="card-pad">
@@ -340,6 +370,44 @@
             <div id="laundryResultado"></div>
           </div></div>
         </div>
+
+        <div class="panel" id="panel-caixa">
+          <div class="page-head"><div><div class="section-title">Fluxo de Caixa</div><div class="section-desc">Receitas, gastos e saldo da lavandaria.</div></div></div>
+          <div class="card"><div class="card-pad">
+            <div id="caixaLock">
+              <div class="subcard">
+                <div class="field"><label>Senha</label><input type="password" id="caixaSenha" placeholder="Digite a senha" onkeydown="if(event.key==='Enter') desbloquearCaixa()" /></div>
+                <button class="btn btn-primary" onclick="desbloquearCaixa()">Entrar</button>
+              </div>
+            </div>
+            <div id="caixaConteudo" style="display:none;">
+              <div class="grid-2">
+                <div class="field"><label>Data inicial</label><input type="date" id="caixaInicio" /></div>
+                <div class="field"><label>Data final</label><input type="date" id="caixaFim" /></div>
+              </div>
+              <div class="action-row">
+                <button class="btn btn-secondary" onclick="carregarCaixa()">Consultar</button>
+                <button class="btn btn-ghost" onclick="exportarCaixaCSV()">Exportar CSV</button>
+                <button class="btn btn-ghost" onclick="bloquearCaixa()">Bloquear</button>
+              </div>
+              <div class="divider"></div>
+              <div class="grid-3">
+                <div class="field"><label>Tipo</label><select id="caixaTipo"><option value="gasto">Gasto</option><option value="receita">Receita extra</option></select></div>
+                <div class="field"><label>Data</label><input type="date" id="caixaData" /></div>
+                <div class="field"><label>Valor (€)</label><input type="number" id="caixaValor" placeholder="Ex: 25,00" step="0.01" min="0" /></div>
+              </div>
+              <div class="grid-2">
+                <div class="field"><label>Categoria</label><select id="caixaCategoria"></select></div>
+                <div class="field"><label>Nova categoria</label><input type="text" id="caixaNovaCategoria" placeholder="Ex: Renda, Luz, Detergente" /></div>
+              </div>
+              <div class="action-row" style="margin-bottom:16px;">
+                <button class="btn btn-ghost" onclick="cadastrarCategoriaCaixa()">Cadastrar Categoria</button>
+              </div>
+              <button class="btn btn-primary" onclick="guardarCaixa()">＋ Guardar Lançamento</button>
+              <div id="caixaResultado"></div>
+            </div>
+          </div></div>
+        </div>
       </div>
     </main>
   </div>
@@ -372,11 +440,12 @@
     let ultimoResumoRelatorio = null;
     let laundryAtual = [];
     let ultimoResumoLaundry = null;
+    let dashboardDados = null;
+    let caixaDados = null;
+    let caixaDesbloqueado = false;
+    let caixaCategoriasCache = [];
     const IVA_RATE = 0.23;
-
-    const hoje = new Date();
-    document.getElementById("dataHoje").textContent =
-      hoje.toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" });
+    const CAIXA_PASSWORD = "082012";
 
     window.showToast = function(msg, tipo = "success") {
       const t = document.getElementById("toast");
@@ -438,8 +507,9 @@
       document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.getElementById("panel-" + id).classList.add("active");
-      const order = ["registar","clientes","produtos","relatorio","laundry"];
+      const order = ["registar","clientes","produtos","relatorio","laundry","dashboard","caixa"];
       document.querySelectorAll(".tab-btn")[order.indexOf(id)].classList.add("active");
+      if (id === "caixa") atualizarEstadoCaixa();
     };
 
     async function carregarClientes() {
@@ -1316,11 +1386,655 @@
       URL.revokeObjectURL(url);
     };
 
+    function dataNoPeriodo(data, inicio, fim) {
+      return data && data >= inicio && data <= fim;
+    }
+
+    function diasDoPeriodo(inicio, fim, dadosPorDia) {
+      const dias = [];
+      const atual = new Date(`${inicio}T00:00:00`);
+      const limite = new Date(`${fim}T00:00:00`);
+      while (atual <= limite) {
+        const data = dataInputLocal(atual);
+        dias.push(dadosPorDia[data] || { data, servicos: 0, laundry: 0, kg: 0, registos: 0 });
+        atual.setDate(atual.getDate() + 1);
+      }
+      return dias;
+    }
+
+    function setDashboardLoading(texto) {
+      const resultado = document.getElementById("dashboardResultado");
+      if (resultado) {
+        resultado.innerHTML = `<div class="report-box" style="padding:32px;text-align:center;color:var(--text-3);">${escapeHTML(texto)}</div>`;
+      }
+    }
+
+    function mapParaLista(mapa) {
+      return Object.values(mapa).sort((a, b) => (b.total || b.valor || 0) - (a.total || a.valor || 0));
+    }
+
+    function barRows(lista, valorMaximo, opcoes = {}) {
+      if (!lista.length) return `<div class="empty-state"><p>${escapeHTML(opcoes.vazio || "Sem dados no período.")}</p></div>`;
+      const max = valorMaximo > 0 ? valorMaximo : 1;
+      return lista.map(item => {
+        const valor = Number(item.valor ?? item.total ?? 0);
+        const largura = valor > 0 ? Math.max(3, Math.round((valor / max) * 100)) : 0;
+        const detalhe = opcoes.detalhe ? opcoes.detalhe(item) : moeda(valor);
+        return `
+          <div class="bar-row">
+            <div class="bar-label" title="${escapeHTML(item.nome || item.data || "")}">${escapeHTML(item.nome || item.data || "")}</div>
+            <div class="bar-track"><div class="bar-fill ${opcoes.tipo || ""}" style="width:${largura}%"></div></div>
+            <div class="bar-value">${escapeHTML(detalhe)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    window.carregarDashboard = async function() {
+      const inicio = document.getElementById("dashboardInicio").value;
+      const fim = document.getElementById("dashboardFim").value;
+      if (!inicio || !fim) { showToast("Selecione o período", "error"); return; }
+      if (inicio > fim) { showToast("A data inicial não pode ser maior que a final", "error"); return; }
+      setDashboardLoading("A carregar dashboard...");
+
+      let snapServicos;
+      let snapLaundry;
+      try {
+        [snapServicos, snapLaundry] = await Promise.all([
+          getDocs(collection(db, "registros")),
+          getDocs(collection(db, "laundry"))
+        ]);
+      } catch (erro) {
+        console.error("Erro ao carregar dashboard:", erro);
+        showToast("Erro ao carregar dashboard", "error");
+        setDashboardLoading("Não foi possível carregar a dashboard.");
+        return;
+      }
+
+      const servicos = [];
+      const laundry = [];
+      snapServicos.forEach(d => {
+        const item = normalizarRegisto({ id: d.id, ...d.data() });
+        const data = item.data || String(item.timestamp || "").split("T")[0];
+        if (dataNoPeriodo(data, inicio, fim)) servicos.push({ ...item, data });
+      });
+      snapLaundry.forEach(d => {
+        const item = { id: d.id, ...d.data() };
+        const data = item.data || String(item.criadoEm || "").split("T")[0];
+        if (dataNoPeriodo(data, inicio, fim)) laundry.push({ ...item, data, valor: Number(item.valor || 0) });
+      });
+
+      let totalFaturado = 0;
+      let subtotal = 0;
+      let iva = 0;
+      let totalKg = 0;
+      const porCliente = {};
+      const porProduto = {};
+      const porDia = {};
+
+      servicos.forEach(item => {
+        totalFaturado += item.total;
+        subtotal += item.subtotal;
+        iva += item.valorIVA;
+        totalKg += item.peso;
+
+        const clienteKey = item.clienteId || item.clienteNome || "sem-cliente";
+        if (!porCliente[clienteKey]) {
+          porCliente[clienteKey] = { nome: item.clienteNome || "Sem cliente", registos: 0, kg: 0, subtotal: 0, iva: 0, total: 0 };
+        }
+        porCliente[clienteKey].registos += 1;
+        porCliente[clienteKey].kg += item.peso;
+        porCliente[clienteKey].subtotal += item.subtotal;
+        porCliente[clienteKey].iva += item.valorIVA;
+        porCliente[clienteKey].total += item.total;
+
+        const produtoKey = item.produtoId || item.produtoNome || "sem-produto";
+        if (!porProduto[produtoKey]) {
+          porProduto[produtoKey] = { nome: item.produtoNome || "Sem produto", registos: 0, kg: 0, total: 0 };
+        }
+        porProduto[produtoKey].registos += 1;
+        porProduto[produtoKey].kg += item.peso;
+        porProduto[produtoKey].total += item.total;
+
+        if (!porDia[item.data]) porDia[item.data] = { data: item.data, servicos: 0, laundry: 0, kg: 0, registos: 0 };
+        porDia[item.data].servicos += item.total;
+        porDia[item.data].kg += item.peso;
+        porDia[item.data].registos += 1;
+      });
+
+      let totalLaundry = 0;
+      laundry.forEach(item => {
+        totalLaundry += item.valor;
+        if (!porDia[item.data]) porDia[item.data] = { data: item.data, servicos: 0, laundry: 0, kg: 0, registos: 0 };
+        porDia[item.data].laundry += item.valor;
+      });
+
+      const clientes = mapParaLista(porCliente);
+      const produtos = mapParaLista(porProduto);
+      const diasPeriodo = diasDoPeriodo(inicio, fim, porDia);
+      const dias = [...diasPeriodo].sort((a, b) => b.data.localeCompare(a.data));
+      const melhorCliente = clientes[0]?.nome || "Sem dados";
+      const melhorProduto = produtos[0]?.nome || "Sem dados";
+      const melhorDia = [...dias].sort((a, b) => ((b.servicos + b.laundry) - (a.servicos + a.laundry)))[0]?.data || "Sem dados";
+
+      dashboardDados = {
+        inicio, fim, servicos, laundry, clientes, produtos, dias,
+        resumo: { totalFaturado, subtotal, iva, totalKg, totalLaundry, totalGeral: totalFaturado + totalLaundry, totalRegistos: servicos.length, totalLaundryRegistos: laundry.length, melhorCliente, melhorProduto, melhorDia }
+      };
+
+      const clienteHTML = clientes.length ? clientes.map(c => `
+        <div class="report-row">
+          <div>
+            <div class="report-row-label">${escapeHTML(c.nome)}</div>
+            <div class="report-date">${c.registos} registo(s) • ${quantidade(c.kg)}</div>
+          </div>
+          <span class="report-row-value">${moeda(c.total)}</span>
+        </div>
+      `).join("") : `<div class="empty-state"><p>Nenhuma faturação por cliente neste período.</p></div>`;
+
+      const produtoHTML = produtos.length ? produtos.slice(0, 8).map(p => `
+        <div class="report-row">
+          <div>
+            <div class="report-row-label">${escapeHTML(p.nome)}</div>
+            <div class="report-date">${p.registos} registo(s) • ${quantidade(p.kg)}</div>
+          </div>
+          <span class="report-row-value">${moeda(p.total)}</span>
+        </div>
+      `).join("") : `<div class="empty-state"><p>Nenhum produto faturado neste período.</p></div>`;
+
+      const laundryHTML = laundry.length ? laundry
+        .sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")))
+        .slice(0, 12)
+        .map(l => `
+          <div class="report-row">
+            <div>
+              <div class="report-row-label">${escapeHTML(l.data)}</div>
+              <div class="report-date">${escapeHTML(l.observacao || "Sem observação")}</div>
+            </div>
+            <span class="report-row-value">${moeda(l.valor)}</span>
+          </div>
+        `).join("") : `<div class="empty-state"><p>Nenhum valor Laundry neste período.</p></div>`;
+
+      const diasHTML = dias.length ? dias.slice(0, 12).map(d => `
+        <div class="report-row">
+          <div>
+            <div class="report-row-label">${escapeHTML(d.data)}</div>
+            <div class="report-date">Serviços: ${moeda(d.servicos)} • Laundry: ${moeda(d.laundry)} • ${quantidade(d.kg)}</div>
+          </div>
+          <span class="report-row-value">${moeda(d.servicos + d.laundry)}</span>
+        </div>
+      `).join("") : `<div class="empty-state"><p>Nenhum movimento neste período.</p></div>`;
+
+      const clientesTop = clientes.slice(0, 8).map(c => ({ nome: c.nome, valor: c.total, kg: c.kg, registos: c.registos }));
+      const diasTop = diasPeriodo
+        .map(d => ({ data: d.data, nome: d.data, valor: d.servicos + d.laundry, servicos: d.servicos, laundry: d.laundry }));
+      const maxCliente = Math.max(0, ...clientesTop.map(c => c.valor));
+      const maxDia = Math.max(0, ...diasTop.map(d => d.valor));
+      const totalCombinado = totalFaturado + totalLaundry;
+      const servicosPct = totalCombinado > 0 ? (totalFaturado / totalCombinado) * 100 : 0;
+      const laundryPct = totalCombinado > 0 ? (totalLaundry / totalCombinado) * 100 : 0;
+      const visualHTML = `
+        <div class="chart-grid">
+          <div class="chart-panel">
+            <div class="chart-title">Faturação por cliente</div>
+            ${barRows(clientesTop, maxCliente, {
+              vazio: "Nenhum cliente faturado neste período.",
+              detalhe: item => `${moeda(item.valor)} • ${quantidade(item.kg)}`
+            })}
+          </div>
+          <div class="chart-panel">
+            <div class="chart-title">Serviços vs Laundry</div>
+            <div class="split-chart">
+              <div class="split-total">
+                <span>Total geral</span>
+                <strong>${moeda(totalCombinado)}</strong>
+              </div>
+              <div class="stack-bar" title="Serviços ${servicosPct.toFixed(1)}% • Laundry ${laundryPct.toFixed(1)}%">
+                <div class="stack-segment services" style="width:${servicosPct}%"></div>
+                <div class="stack-segment laundry" style="width:${laundryPct}%"></div>
+              </div>
+              <div class="legend-row">
+                <span><span class="legend-dot services"></span>Serviços: ${moeda(totalFaturado)}</span>
+                <span><span class="legend-dot laundry"></span>Laundry: ${moeda(totalLaundry)}</span>
+              </div>
+              <div class="report-row" style="padding:0;border-bottom:none;">
+                <span class="report-row-label">Produto destaque</span>
+                <span class="report-row-value">${escapeHTML(melhorProduto)}</span>
+              </div>
+              <div class="report-row" style="padding:0;border-bottom:none;">
+                <span class="report-row-label">Cliente destaque</span>
+                <span class="report-row-value">${escapeHTML(melhorCliente)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-panel" style="grid-column:1 / -1;">
+            <div class="chart-title">Movimento diário</div>
+            ${barRows(diasTop, maxDia, {
+              vazio: "Nenhum movimento diário neste período.",
+              detalhe: item => `${moeda(item.valor)} • Serviços ${moeda(item.servicos)} • Laundry ${moeda(item.laundry)}`
+            })}
+          </div>
+        </div>
+      `;
+
+      document.getElementById("dashboardResultado").innerHTML = `
+        <div class="report-box">
+          <div class="report-header">
+            <div class="report-header-label">Período — ${escapeHTML(inicio)} a ${escapeHTML(fim)}</div>
+            <div class="report-total">${moeda(totalFaturado + totalLaundry)}<span> total geral</span></div>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card"><div class="metric-label">Serviços</div><div class="metric-value">${moeda(totalFaturado)}</div></div>
+            <div class="metric-card"><div class="metric-label">Laundry</div><div class="metric-value">${moeda(totalLaundry)}</div></div>
+            <div class="metric-card"><div class="metric-label">Quantidade</div><div class="metric-value">${totalKg.toFixed(2)} kg</div></div>
+            <div class="metric-card"><div class="metric-label">Registos</div><div class="metric-value">${servicos.length + laundry.length}</div></div>
+            <div class="metric-card"><div class="metric-label">Subtotal</div><div class="metric-value">${moeda(subtotal)}</div></div>
+            <div class="metric-card"><div class="metric-label">IVA</div><div class="metric-value">${moeda(iva)}</div></div>
+            <div class="metric-card"><div class="metric-label">Cliente destaque</div><div class="metric-value">${escapeHTML(melhorCliente)}</div></div>
+            <div class="metric-card"><div class="metric-label">Melhor dia</div><div class="metric-value">${escapeHTML(melhorDia)}</div></div>
+          </div>
+          ${visualHTML}
+        </div>
+      `;
+    };
+
+    window.exportarDashboardCSV = function() {
+      if (!dashboardDados) { showToast("Consulte a dashboard primeiro", "error"); return; }
+      const { inicio, fim, resumo, clientes, produtos, dias, laundry } = dashboardDados;
+      const linhas = [];
+
+      linhas.push(["Dashboard", `${inicio} a ${fim}`].map(csvValor).join(";"));
+      linhas.push(["Total serviços", Number(resumo.totalFaturado || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Total Laundry", Number(resumo.totalLaundry || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Total geral", Number(resumo.totalGeral || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Quantidade kg", Number(resumo.totalKg || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push("");
+
+      linhas.push(["Faturação por cliente"].map(csvValor).join(";"));
+      linhas.push(["Cliente", "Registos", "Quantidade", "Subtotal", "IVA", "Total"].map(csvValor).join(";"));
+      clientes.forEach(c => linhas.push([
+        c.nome,
+        c.registos,
+        Number(c.kg || 0).toFixed(2),
+        Number(c.subtotal || 0).toFixed(2),
+        Number(c.iva || 0).toFixed(2),
+        Number(c.total || 0).toFixed(2)
+      ].map(csvValor).join(";")));
+      linhas.push("");
+
+      linhas.push(["Produtos"].map(csvValor).join(";"));
+      linhas.push(["Produto", "Registos", "Quantidade", "Total"].map(csvValor).join(";"));
+      produtos.forEach(p => linhas.push([
+        p.nome,
+        p.registos,
+        Number(p.kg || 0).toFixed(2),
+        Number(p.total || 0).toFixed(2)
+      ].map(csvValor).join(";")));
+      linhas.push("");
+
+      linhas.push(["Laundry"].map(csvValor).join(";"));
+      linhas.push(["Data", "Valor", "Observação"].map(csvValor).join(";"));
+      laundry.forEach(l => linhas.push([
+        l.data,
+        Number(l.valor || 0).toFixed(2),
+        l.observacao || ""
+      ].map(csvValor).join(";")));
+      linhas.push("");
+
+      linhas.push(["Resumo diário"].map(csvValor).join(";"));
+      linhas.push(["Data", "Serviços", "Laundry", "Total", "Quantidade", "Registos serviços"].map(csvValor).join(";"));
+      dias.forEach(d => linhas.push([
+        d.data,
+        Number(d.servicos || 0).toFixed(2),
+        Number(d.laundry || 0).toFixed(2),
+        Number((d.servicos || 0) + (d.laundry || 0)).toFixed(2),
+        Number(d.kg || 0).toFixed(2),
+        d.registos || 0
+      ].map(csvValor).join(";")));
+
+      const blob = new Blob(["\uFEFF" + linhas.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `dashboard-${inicio}-a-${fim}.csv`.replace(/[\\/:*?"<>|]+/g, "-");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    function atualizarEstadoCaixa() {
+      caixaDesbloqueado = sessionStorage.getItem("caixaDesbloqueado") === "1";
+      const lock = document.getElementById("caixaLock");
+      const conteudo = document.getElementById("caixaConteudo");
+      if (!lock || !conteudo) return;
+      lock.style.display = caixaDesbloqueado ? "none" : "block";
+      conteudo.style.display = caixaDesbloqueado ? "block" : "none";
+      if (!caixaDesbloqueado) document.getElementById("caixaSenha").value = "";
+    }
+
+    window.desbloquearCaixa = function() {
+      const senha = document.getElementById("caixaSenha").value;
+      if (senha !== CAIXA_PASSWORD) {
+        showToast("Senha incorreta", "error");
+        return;
+      }
+      sessionStorage.setItem("caixaDesbloqueado", "1");
+      atualizarEstadoCaixa();
+      showToast("Fluxo de Caixa desbloqueado!");
+      carregarCategoriasCaixa();
+      window.carregarCaixa();
+    };
+
+    window.bloquearCaixa = function() {
+      sessionStorage.removeItem("caixaDesbloqueado");
+      caixaDados = null;
+      document.getElementById("caixaResultado").innerHTML = "";
+      atualizarEstadoCaixa();
+    };
+
+    function setCaixaLoading(texto) {
+      const resultado = document.getElementById("caixaResultado");
+      if (resultado) {
+        resultado.innerHTML = `<div class="report-box" style="padding:32px;text-align:center;color:var(--text-3);">${escapeHTML(texto)}</div>`;
+      }
+    }
+
+    function renderCategoriasCaixa() {
+      const select = document.getElementById("caixaCategoria");
+      if (!select) return;
+      select.innerHTML = `<option value="">Selecione uma categoria</option>`;
+      caixaCategoriasCache.forEach(categoria => {
+        const nome = String(categoria.nome || "");
+        select.innerHTML += `<option value="${escapeHTML(nome)}">${escapeHTML(nome)}</option>`;
+      });
+    }
+
+    async function carregarCategoriasCaixa() {
+      try {
+        const snapshot = await getDocs(collection(db, "caixaCategorias"));
+        caixaCategoriasCache = [];
+        snapshot.forEach(d => caixaCategoriasCache.push({ id: d.id, ...d.data() }));
+        caixaCategoriasCache.sort((a, b) => String(a.nome || "").localeCompare(String(b.nome || ""), "pt-PT"));
+        renderCategoriasCaixa();
+      } catch (erro) {
+        console.error("Erro ao carregar categorias do caixa:", erro);
+        showToast("Erro ao carregar categorias", "error");
+      }
+    }
+
+    window.cadastrarCategoriaCaixa = async function() {
+      if (!caixaDesbloqueado) { showToast("Desbloqueie o Fluxo de Caixa", "error"); return; }
+      const input = document.getElementById("caixaNovaCategoria");
+      const nome = input.value.trim();
+      if (!nome) { showToast("Digite o nome da categoria", "error"); return; }
+      const existe = caixaCategoriasCache.some(categoria => String(categoria.nome || "").toLowerCase() === nome.toLowerCase());
+      if (existe) { showToast("Categoria já cadastrada", "error"); return; }
+
+      try {
+        await addDoc(collection(db, "caixaCategorias"), { nome, criadoEm: new Date().toISOString() });
+        input.value = "";
+        await carregarCategoriasCaixa();
+        document.getElementById("caixaCategoria").value = nome;
+        showToast("Categoria cadastrada com sucesso!");
+      } catch (erro) {
+        console.error("Erro ao cadastrar categoria:", erro);
+        showToast("Erro ao cadastrar categoria", "error");
+      }
+    };
+
+    window.guardarCaixa = async function() {
+      if (!caixaDesbloqueado) { showToast("Desbloqueie o Fluxo de Caixa", "error"); return; }
+      const tipo = document.getElementById("caixaTipo").value;
+      const data = document.getElementById("caixaData").value;
+      const valor = parseValor(document.getElementById("caixaValor").value);
+      const categoria = document.getElementById("caixaCategoria").value;
+      if (!data) { showToast("Selecione a data", "error"); return; }
+      if (isNaN(valor) || valor <= 0) { showToast("Digite um valor válido", "error"); return; }
+      if (!categoria) { showToast("Selecione a categoria", "error"); return; }
+
+      const dataObj = new Date(`${data}T00:00:00`);
+      try {
+        await addDoc(collection(db, "caixa"), {
+          tipo,
+          data,
+          valor,
+          categoria,
+          mes: dataObj.getMonth() + 1,
+          ano: dataObj.getFullYear(),
+          criadoEm: new Date().toISOString()
+        });
+        document.getElementById("caixaValor").value = "";
+        showToast("Lançamento guardado com sucesso!");
+        await window.carregarCaixa();
+      } catch (erro) {
+        console.error("Erro ao guardar caixa:", erro);
+        showToast("Erro ao guardar lançamento", "error");
+      }
+    };
+
+    window.carregarCaixa = async function() {
+      if (!caixaDesbloqueado) { atualizarEstadoCaixa(); return; }
+      const inicio = document.getElementById("caixaInicio").value;
+      const fim = document.getElementById("caixaFim").value;
+      if (!inicio || !fim) { showToast("Selecione o período", "error"); return; }
+      if (inicio > fim) { showToast("A data inicial não pode ser maior que a final", "error"); return; }
+      setCaixaLoading("A carregar fluxo de caixa...");
+
+      let snapServicos;
+      let snapLaundry;
+      let snapCaixa;
+      try {
+        [snapServicos, snapLaundry, snapCaixa] = await Promise.all([
+          getDocs(collection(db, "registros")),
+          getDocs(collection(db, "laundry")),
+          getDocs(collection(db, "caixa"))
+        ]);
+      } catch (erro) {
+        console.error("Erro ao carregar caixa:", erro);
+        showToast("Erro ao carregar fluxo de caixa", "error");
+        setCaixaLoading("Não foi possível carregar o fluxo de caixa.");
+        return;
+      }
+
+      const servicos = [];
+      const laundry = [];
+      const manuais = [];
+      snapServicos.forEach(d => {
+        const item = normalizarRegisto({ id: d.id, ...d.data() });
+        const data = item.data || String(item.timestamp || "").split("T")[0];
+        if (dataNoPeriodo(data, inicio, fim)) servicos.push({ ...item, data, origem: "Serviços" });
+      });
+      snapLaundry.forEach(d => {
+        const item = { id: d.id, ...d.data() };
+        const data = item.data || String(item.criadoEm || "").split("T")[0];
+        if (dataNoPeriodo(data, inicio, fim)) laundry.push({ ...item, data, valor: Number(item.valor || 0), origem: "Laundry" });
+      });
+      snapCaixa.forEach(d => {
+        const item = { id: d.id, ...d.data() };
+        const data = item.data || String(item.criadoEm || "").split("T")[0];
+        if (dataNoPeriodo(data, inicio, fim)) {
+          manuais.push({
+            ...item,
+            data,
+            tipo: item.tipo === "receita" ? "receita" : "gasto",
+            valor: Number(item.valor || 0),
+            categoria: item.categoria || "Sem categoria",
+            origem: "Manual"
+          });
+        }
+      });
+
+      const receitasServicos = servicos.reduce((s, item) => s + item.total, 0);
+      const receitasLaundry = laundry.reduce((s, item) => s + item.valor, 0);
+      const receitasExtras = manuais.filter(i => i.tipo === "receita").reduce((s, item) => s + item.valor, 0);
+      const gastos = manuais.filter(i => i.tipo === "gasto").reduce((s, item) => s + item.valor, 0);
+      const receitas = receitasServicos + receitasLaundry + receitasExtras;
+      const saldo = receitas - gastos;
+
+      const porCategoria = {};
+      const porDia = {};
+      const addDia = (data, receita, gasto) => {
+        if (!porDia[data]) porDia[data] = { data, receitas: 0, gastos: 0, saldo: 0 };
+        porDia[data].receitas += receita;
+        porDia[data].gastos += gasto;
+        porDia[data].saldo = porDia[data].receitas - porDia[data].gastos;
+      };
+
+      servicos.forEach(item => addDia(item.data, item.total, 0));
+      laundry.forEach(item => addDia(item.data, item.valor, 0));
+      manuais.forEach(item => {
+        if (item.tipo === "gasto") {
+          if (!porCategoria[item.categoria]) porCategoria[item.categoria] = { nome: item.categoria, valor: 0, registos: 0 };
+          porCategoria[item.categoria].valor += item.valor;
+          porCategoria[item.categoria].registos += 1;
+          addDia(item.data, 0, item.valor);
+        } else {
+          addDia(item.data, item.valor, 0);
+        }
+      });
+
+      const diasPeriodo = diasDoPeriodo(inicio, fim, porDia);
+      diasPeriodo.forEach(d => { d.saldo = d.receitas - d.gastos; d.valor = Math.max(d.receitas, d.gastos); d.nome = d.data; });
+      const categorias = Object.values(porCategoria).sort((a, b) => b.valor - a.valor);
+      const maxCategoria = Math.max(0, ...categorias.map(c => c.valor));
+      const manuaisOrdenados = [...manuais].sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
+
+      caixaDados = { inicio, fim, servicos, laundry, manuais, dias: diasPeriodo, categorias, resumo: { receitasServicos, receitasLaundry, receitasExtras, receitas, gastos, saldo } };
+
+      const categoriasHTML = categorias.length ? barRows(categorias.slice(0, 10), maxCategoria, {
+        tipo: "laundry",
+        vazio: "Nenhum gasto por categoria neste período.",
+        detalhe: item => `${moeda(item.valor)} • ${item.registos} registo(s)`
+      }) : `<div class="empty-state"><p>Nenhum gasto por categoria neste período.</p></div>`;
+
+      const manuaisHTML = manuaisOrdenados.length ? manuaisOrdenados.slice(0, 12).map(item => `
+        <div class="report-row">
+          <div>
+            <div class="report-row-label">${escapeHTML(item.categoria)}</div>
+            <div class="report-date">${escapeHTML(item.data)} • ${escapeHTML(item.tipo === "receita" ? "Receita extra" : "Gasto")}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="report-row-value">${item.tipo === "gasto" ? "-" : "+"}${moeda(item.valor)}</span>
+            <button class="btn-remove" onclick="excluirCaixa('${jsString(item.id)}')" title="Excluir lançamento">✕</button>
+          </div>
+        </div>
+      `).join("") : `<div class="empty-state"><p>Nenhum lançamento manual neste período.</p></div>`;
+
+      document.getElementById("caixaResultado").innerHTML = `
+        <div class="report-box" style="margin-top:16px;">
+          <div class="report-header">
+            <div class="report-header-label">Fluxo de Caixa — ${escapeHTML(inicio)} a ${escapeHTML(fim)}</div>
+            <div class="report-total">${moeda(saldo)}<span> saldo</span></div>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card"><div class="metric-label">Receitas</div><div class="metric-value">${moeda(receitas)}</div></div>
+            <div class="metric-card"><div class="metric-label">Gastos</div><div class="metric-value">${moeda(gastos)}</div></div>
+            <div class="metric-card"><div class="metric-label">Saldo</div><div class="metric-value">${moeda(saldo)}</div></div>
+            <div class="metric-card"><div class="metric-label">Serviços</div><div class="metric-value">${moeda(receitasServicos)}</div></div>
+            <div class="metric-card"><div class="metric-label">Laundry</div><div class="metric-value">${moeda(receitasLaundry)}</div></div>
+            <div class="metric-card"><div class="metric-label">Receitas extras</div><div class="metric-value">${moeda(receitasExtras)}</div></div>
+            <div class="metric-card"><div class="metric-label">Lançamentos</div><div class="metric-value">${manuais.length}</div></div>
+            <div class="metric-card"><div class="metric-label">Margem</div><div class="metric-value">${receitas > 0 ? ((saldo / receitas) * 100).toFixed(1) : "0.0"}%</div></div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-panel">
+              <div class="chart-title">Gastos por categoria</div>
+              ${categoriasHTML}
+            </div>
+            <div class="chart-panel">
+              <div class="chart-title">Composição das receitas</div>
+              ${barRows([
+                { nome: "Serviços", valor: receitasServicos },
+                { nome: "Laundry", valor: receitasLaundry },
+                { nome: "Extras", valor: receitasExtras }
+              ], Math.max(receitasServicos, receitasLaundry, receitasExtras), { detalhe: item => moeda(item.valor) })}
+            </div>
+          </div>
+          <div class="report-section-title">Lançamentos manuais</div>
+          ${manuaisHTML}
+        </div>
+      `;
+    };
+
+    window.excluirCaixa = async function(registoId) {
+      if (!caixaDesbloqueado) { showToast("Desbloqueie o Fluxo de Caixa", "error"); return; }
+      if (!registoId) return;
+      const confirmar = confirm("Tem certeza que deseja excluir este lançamento do caixa?");
+      if (!confirmar) return;
+      try {
+        await deleteDoc(doc(db, "caixa", registoId));
+        showToast("Lançamento excluído com sucesso!");
+        await window.carregarCaixa();
+      } catch (erro) {
+        console.error("Erro ao excluir caixa:", erro);
+        showToast("Erro ao excluir lançamento", "error");
+      }
+    };
+
+    window.exportarCaixaCSV = function() {
+      if (!caixaDesbloqueado) { showToast("Desbloqueie o Fluxo de Caixa", "error"); return; }
+      if (!caixaDados) { showToast("Consulte o fluxo de caixa primeiro", "error"); return; }
+      const { inicio, fim, resumo, servicos, laundry, manuais, categorias } = caixaDados;
+      const linhas = [];
+
+      linhas.push(["Fluxo de Caixa", `${inicio} a ${fim}`].map(csvValor).join(";"));
+      linhas.push(["Receitas", Number(resumo.receitas || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Gastos", Number(resumo.gastos || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Saldo", Number(resumo.saldo || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push("");
+
+      linhas.push(["Resumo receitas"].map(csvValor).join(";"));
+      linhas.push(["Origem", "Valor"].map(csvValor).join(";"));
+      linhas.push(["Serviços", Number(resumo.receitasServicos || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Laundry", Number(resumo.receitasLaundry || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Receitas extras", Number(resumo.receitasExtras || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push("");
+
+      linhas.push(["Gastos por categoria"].map(csvValor).join(";"));
+      linhas.push(["Categoria", "Registos", "Valor"].map(csvValor).join(";"));
+      categorias.forEach(c => linhas.push([c.nome, c.registos, Number(c.valor || 0).toFixed(2)].map(csvValor).join(";")));
+      linhas.push("");
+
+      linhas.push(["Receitas automáticas"].map(csvValor).join(";"));
+      linhas.push(["Data", "Origem", "Cliente/Descrição", "Valor"].map(csvValor).join(";"));
+      servicos.forEach(s => linhas.push([s.data, "Serviços", s.clienteNome || "", Number(s.total || 0).toFixed(2)].map(csvValor).join(";")));
+      laundry.forEach(l => linhas.push([l.data, "Laundry", l.observacao || "", Number(l.valor || 0).toFixed(2)].map(csvValor).join(";")));
+      linhas.push("");
+
+      linhas.push(["Lançamentos manuais"].map(csvValor).join(";"));
+      linhas.push(["Data", "Tipo", "Categoria", "Valor"].map(csvValor).join(";"));
+      manuais.forEach(m => linhas.push([
+        m.data,
+        m.tipo,
+        m.categoria,
+        Number(m.valor || 0).toFixed(2)
+      ].map(csvValor).join(";")));
+
+      const blob = new Blob(["\uFEFF" + linhas.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `fluxo-caixa-${inicio}-a-${fim}.csv`.replace(/[\\/:*?"<>|]+/g, "-");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    };
+
     async function init() {
       const agora = new Date();
+      const primeiroDiaMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
       document.getElementById("mesRelatorio").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
       document.getElementById("laundryMes").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
       document.getElementById("laundryData").value = dataInputLocal(agora);
+      document.getElementById("dashboardInicio").value = dataInputLocal(primeiroDiaMes);
+      document.getElementById("dashboardFim").value = dataInputLocal(agora);
+      document.getElementById("caixaInicio").value = dataInputLocal(primeiroDiaMes);
+      document.getElementById("caixaFim").value = dataInputLocal(agora);
+      document.getElementById("caixaData").value = dataInputLocal(agora);
+      atualizarEstadoCaixa();
+      if (caixaDesbloqueado) await carregarCategoriasCaixa();
       await carregarClientes();
       await carregarProdutos();
     }
