@@ -56,24 +56,24 @@
       border-right: 1px solid var(--line);
       box-shadow: 10px 0 36px rgba(15,89,100,.08);
       display: flex; flex-direction: column;
-      padding: 22px 16px;
+      padding: 16px 14px;
       backdrop-filter: blur(18px);
       z-index: 10;
     }
 
-    .brand-card { text-align: center; padding: 8px 10px 26px; }
-    .brand-logo { width: 150px; max-width: 88%; height: auto; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(15,89,100,.12)); }
+    .brand-card { text-align: center; padding: 4px 8px 16px; }
+    .brand-logo { width: 118px; max-width: 84%; height: auto; object-fit: contain; filter: drop-shadow(0 10px 20px rgba(15,89,100,.12)); }
     .brand-name { margin-top: 8px; font-size: 15px; font-weight: 700; color: var(--brand-dark); }
     .brand-sub { font-size: 13px; color: var(--text-2); }
 
-    .tab-nav { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
+    .tab-nav { display: flex; flex-direction: column; gap: 7px; margin-top: 2px; }
     .tab-btn {
       display: flex; align-items: center; gap: 12px;
-      padding: 14px 16px; width: 100%;
+      padding: 10px 12px; width: 100%;
       border-radius: var(--radius-md); border: 1px solid transparent;
       background: transparent; color: var(--text-2);
       cursor: pointer; font-family: 'DM Sans', sans-serif;
-      font-size: 16px; font-weight: 700; text-align: left;
+      font-size: 15px; font-weight: 700; text-align: left;
       transition: all .18s ease;
     }
     .tab-btn:hover { background: #fff; color: var(--brand-dark); border-color: var(--line); box-shadow: var(--shadow-sm); transform: translateX(2px); }
@@ -183,6 +183,12 @@
     .legend-dot.laundry { background:var(--green); }
     .report-section-title { padding:16px 20px 8px; display:block; }
     .report-date { font-size:13px; color:var(--text-3); margin-top:4px; }
+    .cost-summary { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:18px; }
+    .cost-products-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; align-items:start; }
+    .cost-product { border:1px solid var(--line); border-radius:var(--radius-md); padding:18px; background:#fbfeff; min-width:0; }
+    .cost-product-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+    .cost-product-title { color:var(--brand-dark); font-size:18px; font-weight:900; }
+    .cost-pill { font-family:'DM Mono', monospace; color:var(--green); font-weight:900; white-space:nowrap; }
     .empty-state { text-align:center; padding:42px 20px; color:var(--text-3); }
     .empty-state .icon { font-size:36px; margin-bottom:10px; }
     .empty-state p { font-size:16px; }
@@ -205,7 +211,7 @@
       .main-area { padding: 18px 14px 28px; }
       .page-head { flex-direction:column; }
       .date-pill { width:100%; justify-content:center; }
-      .grid-2, .grid-3, .row-add, .metrics-grid, .chart-grid { grid-template-columns: 1fr; }
+      .grid-2, .grid-3, .row-add, .metrics-grid, .chart-grid, .cost-summary, .cost-products-grid { grid-template-columns: 1fr; }
       .bar-row { grid-template-columns: 1fr; gap:6px; }
       .bar-value { text-align:left; }
       .action-row { flex-direction:column; }
@@ -233,6 +239,7 @@
         <button class="tab-btn" onclick="setTab('laundry')"><span class="tab-dot">€</span> Laundry</button>
         <button class="tab-btn" onclick="setTab('dashboard')"><span class="tab-dot">▤</span> Dashboard</button>
         <button class="tab-btn" onclick="setTab('caixa')"><span class="tab-dot">▧</span> Fluxo Caixa</button>
+        <button class="tab-btn" onclick="setTab('custos')"><span class="tab-dot">∑</span> Custos/kg</button>
       </nav>
 
     </aside>
@@ -316,6 +323,14 @@
             <div class="divider"></div>
             <div class="field"><label>Pesquisar produto</label><input type="search" id="buscaProduto" placeholder="Digite para filtrar" oninput="renderListaProdutos()" /></div>
             <div id="listaProdutos"></div>
+          </div></div>
+        </div>
+
+        <div class="panel" id="panel-custos">
+          <div class="page-head"><div><div class="section-title">Custos por kg</div><div class="section-desc">Calcule o custo de amaciador, detergente e branqueador por kg de roupa.</div></div></div>
+          <div class="card"><div class="card-pad">
+            <div class="cost-summary" id="custosResumo"></div>
+            <div id="custosProdutosLista" class="cost-products-grid"></div>
           </div></div>
         </div>
 
@@ -444,6 +459,12 @@
     let caixaDados = null;
     let caixaDesbloqueado = false;
     let caixaCategoriasCache = [];
+    let custosProdutosCache = {};
+    const PRODUTOS_CUSTO_KG = [
+      { id: "amaciador", nome: "Amaciador" },
+      { id: "detergente", nome: "Detergente" },
+      { id: "branqueador", nome: "Branqueador" }
+    ];
     const IVA_RATE = 0.23;
     const CAIXA_PASSWORD = "082012";
 
@@ -477,6 +498,10 @@
       return `€ ${(Number(valor) || 0).toFixed(2)}`;
     }
 
+    function moedaPrecisa(valor, casas = 4) {
+      return `€ ${(Number(valor) || 0).toFixed(casas)}`;
+    }
+
     function dataInputLocal(data = new Date()) {
       const local = new Date(data.getTime() - (data.getTimezoneOffset() * 60000));
       return local.toISOString().split("T")[0];
@@ -507,7 +532,7 @@
       document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.getElementById("panel-" + id).classList.add("active");
-      const order = ["registar","clientes","produtos","relatorio","laundry","dashboard","caixa"];
+      const order = ["registar","clientes","produtos","relatorio","laundry","dashboard","caixa","custos"];
       document.querySelectorAll(".tab-btn")[order.indexOf(id)].classList.add("active");
       if (id === "caixa") atualizarEstadoCaixa();
     };
@@ -708,6 +733,140 @@
       const precoInput = document.getElementById("preco");
       const preco = Number(select.selectedOptions[0]?.dataset.preco || 0);
       if (select.value && preco > 0) precoInput.value = preco.toFixed(2);
+    };
+
+    function dadosCustoProduto(produtoId) {
+      const produto = PRODUTOS_CUSTO_KG.find(p => p.id === produtoId);
+      return {
+        produtoId,
+        nome: produto?.nome || produtoId,
+        precoPago: 0,
+        litros: 0,
+        mlPorKg: 0,
+        ...(custosProdutosCache[produtoId] || {})
+      };
+    }
+
+    function calcularCustoQuimico(dados) {
+      const precoPago = Number(dados.precoPago || 0);
+      const litros = Number(dados.litros || 0);
+      const mlPorKg = Number(dados.mlPorKg || 0);
+      const custoPorLitro = litros > 0 ? precoPago / litros : 0;
+      const custoPorKg = custoPorLitro * (mlPorKg / 1000);
+      return { custoPorLitro, custoPorKg };
+    }
+
+    function atualizarResumoCustos() {
+      const resumo = document.getElementById("custosResumo");
+      if (!resumo) return;
+      const totais = PRODUTOS_CUSTO_KG.map(p => calcularCustoQuimico(dadosCustoProduto(p.id)).custoPorKg);
+      const totalKg = totais.reduce((acc, valor) => acc + valor, 0);
+      resumo.innerHTML = `
+        <div class="metric-card"><div class="metric-label">Custo total por kg</div><div class="metric-value">${moedaPrecisa(totalKg)}</div></div>
+        <div class="metric-card"><div class="metric-label">Amaciador/kg</div><div class="metric-value">${moedaPrecisa(totais[0])}</div></div>
+        <div class="metric-card"><div class="metric-label">Detergente/kg</div><div class="metric-value">${moedaPrecisa(totais[1])}</div></div>
+        <div class="metric-card"><div class="metric-label">Branqueador/kg</div><div class="metric-value">${moedaPrecisa(totais[2])}</div></div>
+      `;
+    }
+
+    function atualizarSaidasCustoProduto(produtoId) {
+      const dados = dadosCustoProduto(produtoId);
+      const { custoPorLitro, custoPorKg } = calcularCustoQuimico(dados);
+      const litroEl = document.getElementById(`custoLitro-${produtoId}`);
+      const kgEl = document.getElementById(`custoKg-${produtoId}`);
+      const destaqueEl = document.getElementById(`custoDestaque-${produtoId}`);
+      if (litroEl) litroEl.textContent = `${moedaPrecisa(custoPorLitro)} / L`;
+      if (kgEl) kgEl.textContent = `${moedaPrecisa(custoPorKg)} / kg`;
+      if (destaqueEl) destaqueEl.textContent = `${moedaPrecisa(custoPorKg)}/kg`;
+      atualizarResumoCustos();
+    }
+
+    window.calcularCustoProduto = function(produtoId) {
+      const atual = dadosCustoProduto(produtoId);
+      custosProdutosCache[produtoId] = {
+        ...atual,
+        precoPago: parseValor(document.getElementById(`custoPreco-${produtoId}`).value) || 0,
+        litros: parseValor(document.getElementById(`custoLitros-${produtoId}`).value) || 0,
+        mlPorKg: parseValor(document.getElementById(`custoMl-${produtoId}`).value) || 0
+      };
+      atualizarSaidasCustoProduto(produtoId);
+    };
+
+    function renderCustosProdutos() {
+      const lista = document.getElementById("custosProdutosLista");
+      if (!lista) return;
+      lista.innerHTML = PRODUTOS_CUSTO_KG.map(produto => {
+        const dados = dadosCustoProduto(produto.id);
+        const { custoPorLitro, custoPorKg } = calcularCustoQuimico(dados);
+        return `
+          <div class="cost-product">
+            <div class="cost-product-head">
+              <div class="cost-product-title">${escapeHTML(produto.nome)}</div>
+              <div class="cost-pill" id="custoDestaque-${escapeHTML(produto.id)}">${moedaPrecisa(custoPorKg)}/kg</div>
+            </div>
+            <div class="field"><label>Preço pago (€)</label><input type="number" id="custoPreco-${escapeHTML(produto.id)}" value="${Number(dados.precoPago || 0) || ""}" placeholder="Ex: 18,50" step="0.01" min="0" oninput="calcularCustoProduto('${jsString(produto.id)}')" /></div>
+            <div class="field"><label>Quantidade da embalagem (litros)</label><input type="number" id="custoLitros-${escapeHTML(produto.id)}" value="${Number(dados.litros || 0) || ""}" placeholder="Ex: 20" step="0.01" min="0" oninput="calcularCustoProduto('${jsString(produto.id)}')" /></div>
+            <div class="grid-2">
+              <div class="metric-card"><div class="metric-label">Custo por litro</div><div class="metric-value" id="custoLitro-${escapeHTML(produto.id)}">${moedaPrecisa(custoPorLitro)} / L</div></div>
+              <div class="metric-card"><div class="metric-label">Custo por kg</div><div class="metric-value" id="custoKg-${escapeHTML(produto.id)}">${moedaPrecisa(custoPorKg)} / kg</div></div>
+            </div>
+            <div class="field" style="margin-top:16px;"><label>Uso por kg de roupa (ml)</label><input type="number" id="custoMl-${escapeHTML(produto.id)}" value="${Number(dados.mlPorKg || 0) || ""}" placeholder="Ex: 12" step="0.01" min="0" oninput="calcularCustoProduto('${jsString(produto.id)}')" /></div>
+            <button class="btn btn-primary" onclick="guardarCustoProduto('${jsString(produto.id)}')">Guardar ${escapeHTML(produto.nome)}</button>
+          </div>
+        `;
+      }).join("");
+      atualizarResumoCustos();
+    }
+
+    async function carregarCustosProdutos() {
+      try {
+        const snapshot = await getDocs(collection(db, "custosProdutosKg"));
+        custosProdutosCache = {};
+        snapshot.forEach(d => {
+          const dados = { id: d.id, ...d.data() };
+          if (dados.produtoId) custosProdutosCache[dados.produtoId] = dados;
+        });
+        renderCustosProdutos();
+      } catch (erro) {
+        console.error("Erro ao carregar custos por kg:", erro);
+        renderCustosProdutos();
+        showToast("Erro ao carregar custos por kg", "error");
+      }
+    }
+
+    window.guardarCustoProduto = async function(produtoId) {
+      window.calcularCustoProduto(produtoId);
+      const dados = dadosCustoProduto(produtoId);
+      if (dados.precoPago <= 0) { showToast("Digite o preço pago", "error"); return; }
+      if (dados.litros <= 0) { showToast("Digite a quantidade em litros", "error"); return; }
+      if (dados.mlPorKg < 0) { showToast("Digite um uso por kg válido", "error"); return; }
+
+      const calculos = calcularCustoQuimico(dados);
+      const payload = {
+        produtoId,
+        nome: dados.nome,
+        precoPago: Number(dados.precoPago || 0),
+        litros: Number(dados.litros || 0),
+        mlPorKg: Number(dados.mlPorKg || 0),
+        custoPorLitro: calculos.custoPorLitro,
+        custoPorKg: calculos.custoPorKg,
+        atualizadoEm: new Date().toISOString()
+      };
+
+      try {
+        if (dados.id) {
+          await updateDoc(doc(db, "custosProdutosKg", dados.id), payload);
+        } else {
+          const novo = await addDoc(collection(db, "custosProdutosKg"), { ...payload, criadoEm: new Date().toISOString() });
+          payload.id = novo.id;
+        }
+        custosProdutosCache[produtoId] = { ...dados, ...payload };
+        atualizarSaidasCustoProduto(produtoId);
+        showToast("Custo guardado com sucesso!");
+      } catch (erro) {
+        console.error("Erro ao guardar custo por kg:", erro);
+        showToast("Erro ao guardar custo", "error");
+      }
     };
 
     window.adicionarItem = function() {
@@ -2037,6 +2196,7 @@
       if (caixaDesbloqueado) await carregarCategoriasCaixa();
       await carregarClientes();
       await carregarProdutos();
+      await carregarCustosProdutos();
     }
 
     init();
