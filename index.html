@@ -183,6 +183,9 @@
     .legend-dot.laundry { background:var(--green); }
     .report-section-title { padding:16px 20px 8px; display:block; }
     .report-date { font-size:13px; color:var(--text-3); margin-top:4px; }
+    .cost-profile-switch { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+    .profile-btn { width:auto; min-width:150px; background:#fff; color:var(--brand-dark); border-color:var(--line-strong); }
+    .profile-btn.active { background:linear-gradient(135deg, var(--brand), #208d9b); color:#fff; border-color:transparent; box-shadow:0 12px 22px rgba(47,183,195,.26); }
     .cost-summary { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:18px; }
     .cost-products-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; align-items:start; }
     .cost-product { border:1px solid var(--line); border-radius:var(--radius-md); padding:18px; background:#fbfeff; min-width:0; }
@@ -329,6 +332,10 @@
         <div class="panel" id="panel-custos">
           <div class="page-head"><div><div class="section-title">Custos por kg</div><div class="section-desc">Calcule o custo de amaciador, detergente e branqueador por kg de roupa.</div></div></div>
           <div class="card"><div class="card-pad">
+            <div class="cost-profile-switch" id="custosPerfilBtns">
+              <button class="btn profile-btn active" onclick="setPerfilCustos('comercial')">Comercial</button>
+              <button class="btn profile-btn" onclick="setPerfilCustos('laundry')">Laundry</button>
+            </div>
             <div class="cost-summary" id="custosResumo"></div>
             <div id="custosProdutosLista" class="cost-products-grid"></div>
           </div></div>
@@ -460,6 +467,11 @@
     let caixaDesbloqueado = false;
     let caixaCategoriasCache = [];
     let custosProdutosCache = {};
+    let custosPerfilAtual = "comercial";
+    const PERFIS_CUSTO_KG = [
+      { id: "comercial", nome: "Comercial" },
+      { id: "laundry", nome: "Laundry" }
+    ];
     const PRODUTOS_CUSTO_KG = [
       { id: "amaciador", nome: "Amaciador" },
       { id: "detergente", nome: "Detergente" },
@@ -735,15 +747,25 @@
       if (select.value && preco > 0) precoInput.value = preco.toFixed(2);
     };
 
-    function dadosCustoProduto(produtoId) {
+    function chaveCustoProduto(perfilId, produtoId) {
+      return `${perfilId}:${produtoId}`;
+    }
+
+    function nomePerfilCusto(perfilId) {
+      return PERFIS_CUSTO_KG.find(p => p.id === perfilId)?.nome || perfilId;
+    }
+
+    function dadosCustoProduto(produtoId, perfilId = custosPerfilAtual) {
       const produto = PRODUTOS_CUSTO_KG.find(p => p.id === produtoId);
       return {
+        perfil: perfilId,
+        perfilNome: nomePerfilCusto(perfilId),
         produtoId,
         nome: produto?.nome || produtoId,
         precoPago: 0,
         litros: 0,
         mlPorKg: 0,
-        ...(custosProdutosCache[produtoId] || {})
+        ...(custosProdutosCache[chaveCustoProduto(perfilId, produtoId)] || {})
       };
     }
 
@@ -761,13 +783,28 @@
       if (!resumo) return;
       const totais = PRODUTOS_CUSTO_KG.map(p => calcularCustoQuimico(dadosCustoProduto(p.id)).custoPorKg);
       const totalKg = totais.reduce((acc, valor) => acc + valor, 0);
+      const perfilNome = nomePerfilCusto(custosPerfilAtual);
       resumo.innerHTML = `
-        <div class="metric-card"><div class="metric-label">Custo total por kg</div><div class="metric-value">${moedaPrecisa(totalKg)}</div></div>
+        <div class="metric-card"><div class="metric-label">${escapeHTML(perfilNome)}: total/kg</div><div class="metric-value">${moedaPrecisa(totalKg)}</div></div>
         <div class="metric-card"><div class="metric-label">Amaciador/kg</div><div class="metric-value">${moedaPrecisa(totais[0])}</div></div>
         <div class="metric-card"><div class="metric-label">Detergente/kg</div><div class="metric-value">${moedaPrecisa(totais[1])}</div></div>
         <div class="metric-card"><div class="metric-label">Branqueador/kg</div><div class="metric-value">${moedaPrecisa(totais[2])}</div></div>
       `;
     }
+
+    function renderPerfilCustos() {
+      const botoes = document.querySelectorAll("#custosPerfilBtns .profile-btn");
+      PERFIS_CUSTO_KG.forEach((perfil, index) => {
+        botoes[index]?.classList.toggle("active", perfil.id === custosPerfilAtual);
+      });
+    }
+
+    window.setPerfilCustos = function(perfilId) {
+      if (!PERFIS_CUSTO_KG.some(p => p.id === perfilId)) return;
+      custosPerfilAtual = perfilId;
+      renderPerfilCustos();
+      renderCustosProdutos();
+    };
 
     function atualizarSaidasCustoProduto(produtoId) {
       const dados = dadosCustoProduto(produtoId);
@@ -783,7 +820,7 @@
 
     window.calcularCustoProduto = function(produtoId) {
       const atual = dadosCustoProduto(produtoId);
-      custosProdutosCache[produtoId] = {
+      custosProdutosCache[chaveCustoProduto(custosPerfilAtual, produtoId)] = {
         ...atual,
         precoPago: parseValor(document.getElementById(`custoPreco-${produtoId}`).value) || 0,
         litros: parseValor(document.getElementById(`custoLitros-${produtoId}`).value) || 0,
@@ -795,6 +832,7 @@
     function renderCustosProdutos() {
       const lista = document.getElementById("custosProdutosLista");
       if (!lista) return;
+      renderPerfilCustos();
       lista.innerHTML = PRODUTOS_CUSTO_KG.map(produto => {
         const dados = dadosCustoProduto(produto.id);
         const { custoPorLitro, custoPorKg } = calcularCustoQuimico(dados);
@@ -824,7 +862,8 @@
         custosProdutosCache = {};
         snapshot.forEach(d => {
           const dados = { id: d.id, ...d.data() };
-          if (dados.produtoId) custosProdutosCache[dados.produtoId] = dados;
+          const perfil = dados.perfil || "comercial";
+          if (dados.produtoId) custosProdutosCache[chaveCustoProduto(perfil, dados.produtoId)] = { ...dados, perfil };
         });
         renderCustosProdutos();
       } catch (erro) {
@@ -843,6 +882,8 @@
 
       const calculos = calcularCustoQuimico(dados);
       const payload = {
+        perfil: custosPerfilAtual,
+        perfilNome: nomePerfilCusto(custosPerfilAtual),
         produtoId,
         nome: dados.nome,
         precoPago: Number(dados.precoPago || 0),
@@ -860,7 +901,7 @@
           const novo = await addDoc(collection(db, "custosProdutosKg"), { ...payload, criadoEm: new Date().toISOString() });
           payload.id = novo.id;
         }
-        custosProdutosCache[produtoId] = { ...dados, ...payload };
+        custosProdutosCache[chaveCustoProduto(custosPerfilAtual, produtoId)] = { ...dados, ...payload };
         atualizarSaidasCustoProduto(produtoId);
         showToast("Custo guardado com sucesso!");
       } catch (erro) {
