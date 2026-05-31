@@ -336,6 +336,7 @@
             <div class="cost-profile-switch" id="custosPerfilBtns">
               <button class="btn profile-btn active" onclick="setPerfilCustos('comercial')">Comercial</button>
               <button class="btn profile-btn" onclick="setPerfilCustos('laundry')">Laundry</button>
+              <button class="btn profile-btn" onclick="setPerfilCustos('escondidinho')">Escondidinho</button>
             </div>
             <div class="cost-summary" id="custosResumo"></div>
             <div class="cost-section-title">Produtos químicos</div>
@@ -474,7 +475,8 @@
     let custosPerfilAtual = "comercial";
     const PERFIS_CUSTO_KG = [
       { id: "comercial", nome: "Comercial" },
-      { id: "laundry", nome: "Laundry" }
+      { id: "laundry", nome: "Laundry" },
+      { id: "escondidinho", nome: "Escondidinho" }
     ];
     const PRODUTOS_CUSTO_KG = [
       { id: "amaciador", nome: "Amaciador" },
