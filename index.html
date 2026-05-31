@@ -187,6 +187,7 @@
     .profile-btn { width:auto; min-width:150px; background:#fff; color:var(--brand-dark); border-color:var(--line-strong); }
     .profile-btn.active { background:linear-gradient(135deg, var(--brand), #208d9b); color:#fff; border-color:transparent; box-shadow:0 12px 22px rgba(47,183,195,.26); }
     .cost-summary { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:18px; }
+    .cost-section-title { margin:22px 0 12px; color:var(--brand-dark); font-size:15px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
     .cost-products-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; align-items:start; }
     .cost-product { border:1px solid var(--line); border-radius:var(--radius-md); padding:18px; background:#fbfeff; min-width:0; }
     .cost-product-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
@@ -337,7 +338,10 @@
               <button class="btn profile-btn" onclick="setPerfilCustos('laundry')">Laundry</button>
             </div>
             <div class="cost-summary" id="custosResumo"></div>
+            <div class="cost-section-title">Produtos químicos</div>
             <div id="custosProdutosLista" class="cost-products-grid"></div>
+            <div class="cost-section-title">Custos operacionais</div>
+            <div id="custosOperacionaisLista" class="cost-products-grid"></div>
           </div></div>
         </div>
 
@@ -476,6 +480,11 @@
       { id: "amaciador", nome: "Amaciador" },
       { id: "detergente", nome: "Detergente" },
       { id: "branqueador", nome: "Branqueador" }
+    ];
+    const CUSTOS_OPERACIONAIS_KG = [
+      { id: "agua", nome: "Água", custoLabel: "Valor do m³ (€)", consumoLabel: "Litros por kg", unidadeCusto: "m³", unidadeConsumo: "L", divisor: 1000 },
+      { id: "energia", nome: "Energia", custoLabel: "Custo do kW (€)", consumoLabel: "kW por kg", unidadeCusto: "kW", unidadeConsumo: "kW", divisor: 1 },
+      { id: "gas", nome: "Gás", custoLabel: "Custo do kW (€)", consumoLabel: "kW por kg", unidadeCusto: "kW", unidadeConsumo: "kW", divisor: 1 }
     ];
     const IVA_RATE = 0.23;
     const CAIXA_PASSWORD = "082012";
@@ -769,6 +778,22 @@
       };
     }
 
+    function dadosCustoOperacional(custoId, perfilId = custosPerfilAtual) {
+      const custo = CUSTOS_OPERACIONAIS_KG.find(c => c.id === custoId);
+      return {
+        perfil: perfilId,
+        perfilNome: nomePerfilCusto(perfilId),
+        produtoId: custoId,
+        nome: custo?.nome || custoId,
+        tipoCusto: "operacional",
+        custoUnitario: 0,
+        consumoPorKg: 0,
+        unidadeCusto: custo?.unidadeCusto || "",
+        unidadeConsumo: custo?.unidadeConsumo || "",
+        ...(custosProdutosCache[chaveCustoProduto(perfilId, custoId)] || {})
+      };
+    }
+
     function calcularCustoQuimico(dados) {
       const precoPago = Number(dados.precoPago || 0);
       const litros = Number(dados.litros || 0);
@@ -778,17 +803,30 @@
       return { custoPorLitro, custoPorKg };
     }
 
+    function calcularCustoOperacional(dados) {
+      const config = CUSTOS_OPERACIONAIS_KG.find(c => c.id === dados.produtoId) || {};
+      const custoUnitario = Number(dados.custoUnitario || 0);
+      const consumoPorKg = Number(dados.consumoPorKg || 0);
+      const divisor = Number(config.divisor || 1);
+      const custoPorKg = custoUnitario * (consumoPorKg / divisor);
+      return { custoPorKg };
+    }
+
     function atualizarResumoCustos() {
       const resumo = document.getElementById("custosResumo");
       if (!resumo) return;
-      const totais = PRODUTOS_CUSTO_KG.map(p => calcularCustoQuimico(dadosCustoProduto(p.id)).custoPorKg);
-      const totalKg = totais.reduce((acc, valor) => acc + valor, 0);
+      const totaisQuimicos = PRODUTOS_CUSTO_KG.map(p => calcularCustoQuimico(dadosCustoProduto(p.id)).custoPorKg);
+      const totaisOperacionais = CUSTOS_OPERACIONAIS_KG.map(c => calcularCustoOperacional(dadosCustoOperacional(c.id)).custoPorKg);
+      const totalKg = [...totaisQuimicos, ...totaisOperacionais].reduce((acc, valor) => acc + valor, 0);
       const perfilNome = nomePerfilCusto(custosPerfilAtual);
       resumo.innerHTML = `
         <div class="metric-card"><div class="metric-label">${escapeHTML(perfilNome)}: total/kg</div><div class="metric-value">${moedaPrecisa(totalKg)}</div></div>
-        <div class="metric-card"><div class="metric-label">Amaciador/kg</div><div class="metric-value">${moedaPrecisa(totais[0])}</div></div>
-        <div class="metric-card"><div class="metric-label">Detergente/kg</div><div class="metric-value">${moedaPrecisa(totais[1])}</div></div>
-        <div class="metric-card"><div class="metric-label">Branqueador/kg</div><div class="metric-value">${moedaPrecisa(totais[2])}</div></div>
+        <div class="metric-card"><div class="metric-label">Amaciador/kg</div><div class="metric-value">${moedaPrecisa(totaisQuimicos[0])}</div></div>
+        <div class="metric-card"><div class="metric-label">Detergente/kg</div><div class="metric-value">${moedaPrecisa(totaisQuimicos[1])}</div></div>
+        <div class="metric-card"><div class="metric-label">Branqueador/kg</div><div class="metric-value">${moedaPrecisa(totaisQuimicos[2])}</div></div>
+        <div class="metric-card"><div class="metric-label">Água/kg</div><div class="metric-value">${moedaPrecisa(totaisOperacionais[0])}</div></div>
+        <div class="metric-card"><div class="metric-label">Energia/kg</div><div class="metric-value">${moedaPrecisa(totaisOperacionais[1])}</div></div>
+        <div class="metric-card"><div class="metric-label">Gás/kg</div><div class="metric-value">${moedaPrecisa(totaisOperacionais[2])}</div></div>
       `;
     }
 
@@ -829,9 +867,30 @@
       atualizarSaidasCustoProduto(produtoId);
     };
 
+    function atualizarSaidasCustoOperacional(custoId) {
+      const dados = dadosCustoOperacional(custoId);
+      const { custoPorKg } = calcularCustoOperacional(dados);
+      const kgEl = document.getElementById(`custoOperacionalKg-${custoId}`);
+      const destaqueEl = document.getElementById(`custoOperacionalDestaque-${custoId}`);
+      if (kgEl) kgEl.textContent = `${moedaPrecisa(custoPorKg)} / kg`;
+      if (destaqueEl) destaqueEl.textContent = `${moedaPrecisa(custoPorKg)}/kg`;
+      atualizarResumoCustos();
+    }
+
+    window.calcularCustoOperacional = function(custoId) {
+      const atual = dadosCustoOperacional(custoId);
+      custosProdutosCache[chaveCustoProduto(custosPerfilAtual, custoId)] = {
+        ...atual,
+        custoUnitario: parseValor(document.getElementById(`custoUnitario-${custoId}`).value) || 0,
+        consumoPorKg: parseValor(document.getElementById(`custoConsumo-${custoId}`).value) || 0
+      };
+      atualizarSaidasCustoOperacional(custoId);
+    };
+
     function renderCustosProdutos() {
       const lista = document.getElementById("custosProdutosLista");
-      if (!lista) return;
+      const listaOperacionais = document.getElementById("custosOperacionaisLista");
+      if (!lista || !listaOperacionais) return;
       renderPerfilCustos();
       lista.innerHTML = PRODUTOS_CUSTO_KG.map(produto => {
         const dados = dadosCustoProduto(produto.id);
@@ -850,6 +909,22 @@
             </div>
             <div class="field" style="margin-top:16px;"><label>Uso por kg de roupa (ml)</label><input type="number" id="custoMl-${escapeHTML(produto.id)}" value="${Number(dados.mlPorKg || 0) || ""}" placeholder="Ex: 12" step="0.01" min="0" oninput="calcularCustoProduto('${jsString(produto.id)}')" /></div>
             <button class="btn btn-primary" onclick="guardarCustoProduto('${jsString(produto.id)}')">Guardar ${escapeHTML(produto.nome)}</button>
+          </div>
+        `;
+      }).join("");
+      listaOperacionais.innerHTML = CUSTOS_OPERACIONAIS_KG.map(custo => {
+        const dados = dadosCustoOperacional(custo.id);
+        const { custoPorKg } = calcularCustoOperacional(dados);
+        return `
+          <div class="cost-product">
+            <div class="cost-product-head">
+              <div class="cost-product-title">${escapeHTML(custo.nome)}</div>
+              <div class="cost-pill" id="custoOperacionalDestaque-${escapeHTML(custo.id)}">${moedaPrecisa(custoPorKg)}/kg</div>
+            </div>
+            <div class="field"><label>${escapeHTML(custo.custoLabel)}</label><input type="number" id="custoUnitario-${escapeHTML(custo.id)}" value="${Number(dados.custoUnitario || 0) || ""}" placeholder="Ex: 0,25" step="0.0001" min="0" oninput="calcularCustoOperacional('${jsString(custo.id)}')" /></div>
+            <div class="field"><label>${escapeHTML(custo.consumoLabel)}</label><input type="number" id="custoConsumo-${escapeHTML(custo.id)}" value="${Number(dados.consumoPorKg || 0) || ""}" placeholder="Ex: 5" step="0.0001" min="0" oninput="calcularCustoOperacional('${jsString(custo.id)}')" /></div>
+            <div class="metric-card" style="margin-bottom:16px;"><div class="metric-label">Custo por kg</div><div class="metric-value" id="custoOperacionalKg-${escapeHTML(custo.id)}">${moedaPrecisa(custoPorKg)} / kg</div></div>
+            <button class="btn btn-primary" onclick="guardarCustoOperacional('${jsString(custo.id)}')">Guardar ${escapeHTML(custo.nome)}</button>
           </div>
         `;
       }).join("");
@@ -906,6 +981,44 @@
         showToast("Custo guardado com sucesso!");
       } catch (erro) {
         console.error("Erro ao guardar custo por kg:", erro);
+        showToast("Erro ao guardar custo", "error");
+      }
+    };
+
+    window.guardarCustoOperacional = async function(custoId) {
+      window.calcularCustoOperacional(custoId);
+      const dados = dadosCustoOperacional(custoId);
+      if (dados.custoUnitario <= 0) { showToast("Digite o custo unitário", "error"); return; }
+      if (dados.consumoPorKg < 0) { showToast("Digite um consumo por kg válido", "error"); return; }
+
+      const calculos = calcularCustoOperacional(dados);
+      const config = CUSTOS_OPERACIONAIS_KG.find(c => c.id === custoId) || {};
+      const payload = {
+        perfil: custosPerfilAtual,
+        perfilNome: nomePerfilCusto(custosPerfilAtual),
+        produtoId: custoId,
+        nome: dados.nome,
+        tipoCusto: "operacional",
+        custoUnitario: Number(dados.custoUnitario || 0),
+        consumoPorKg: Number(dados.consumoPorKg || 0),
+        unidadeCusto: config.unidadeCusto || "",
+        unidadeConsumo: config.unidadeConsumo || "",
+        custoPorKg: calculos.custoPorKg,
+        atualizadoEm: new Date().toISOString()
+      };
+
+      try {
+        if (dados.id) {
+          await updateDoc(doc(db, "custosProdutosKg", dados.id), payload);
+        } else {
+          const novo = await addDoc(collection(db, "custosProdutosKg"), { ...payload, criadoEm: new Date().toISOString() });
+          payload.id = novo.id;
+        }
+        custosProdutosCache[chaveCustoProduto(custosPerfilAtual, custoId)] = { ...dados, ...payload };
+        atualizarSaidasCustoOperacional(custoId);
+        showToast("Custo guardado com sucesso!");
+      } catch (erro) {
+        console.error("Erro ao guardar custo operacional:", erro);
         showToast("Erro ao guardar custo", "error");
       }
     };
