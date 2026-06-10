@@ -170,6 +170,12 @@
     .bar-fill { height:100%; min-width:4px; background:linear-gradient(90deg, var(--brand), #0f8fa0); border-radius:999px; }
     .bar-fill.laundry { background:linear-gradient(90deg, #1aa184, #0c7563); }
     .bar-value { font-family:'DM Mono', monospace; color:var(--text-2); font-size:13px; text-align:right; white-space:nowrap; }
+    .vertical-chart { min-height:260px; display:grid; grid-template-columns: repeat(12, minmax(34px, 1fr)); gap:10px; align-items:end; padding-top:12px; }
+    .vertical-bar { min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; height:250px; }
+    .vertical-value { color:var(--text-2); font-family:'DM Mono', monospace; font-size:11px; writing-mode:vertical-rl; transform:rotate(180deg); max-height:76px; overflow:hidden; }
+    .vertical-track { width:100%; max-width:34px; height:150px; display:flex; align-items:flex-end; justify-content:center; background:#eaf5f7; border:1px solid #d8edf2; border-radius:999px; overflow:hidden; }
+    .vertical-fill { width:100%; min-height:4px; background:linear-gradient(180deg, var(--brand), #0f8fa0); border-radius:999px 999px 0 0; }
+    .vertical-label { color:var(--text-1); font-size:12px; font-weight:800; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
     .split-chart { display:flex; flex-direction:column; gap:14px; }
     .split-total { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-md); background:#fff; }
     .split-total strong { color:var(--brand-dark); font-size:20px; font-family:'DM Mono', monospace; }
@@ -218,6 +224,7 @@
       .grid-2, .grid-3, .row-add, .metrics-grid, .chart-grid, .cost-summary, .cost-products-grid { grid-template-columns: 1fr; }
       .bar-row { grid-template-columns: 1fr; gap:6px; }
       .bar-value { text-align:left; }
+      .vertical-chart { grid-template-columns: repeat(6, minmax(34px, 1fr)); overflow-x:auto; }
       .action-row { flex-direction:column; }
       .action-row .btn { width:100%; }
       .btn-add { width:100%; }
@@ -362,14 +369,26 @@
         </div>
 
         <div class="panel" id="panel-relatorio">
-          <div class="page-head"><div><div class="section-title">Relatório Mensal</div><div class="section-desc">Consulte o resumo de quantidade e faturação por mês.</div></div></div>
+          <div class="page-head"><div><div class="section-title">Relatório</div><div class="section-desc">Analise quantidade, faturação e evolução por cliente em diferentes períodos.</div></div></div>
           <div class="card"><div class="card-pad">
             <div class="grid-2">
               <div class="field"><label>Cliente</label><select id="clienteRelatorio"></select></div>
+              <div class="field"><label>Tipo de análise</label><select id="tipoRelatorio" onchange="atualizarFiltrosRelatorio()"><option value="mensal">Mensal</option><option value="periodo">Período</option><option value="anual">Anual</option></select></div>
+            </div>
+            <div class="grid-2" id="filtroRelatorioMensal">
               <div class="field"><label>Mês</label><input type="month" id="mesRelatorio" /></div>
+              <div class="field"><label>&nbsp;</label><button class="btn btn-secondary" onclick="carregarRelatorio()">Consultar</button></div>
+            </div>
+            <div class="grid-2" id="filtroRelatorioPeriodo" style="display:none;">
+              <div class="field"><label>Data inicial</label><input type="date" id="relatorioInicio" /></div>
+              <div class="field"><label>Data final</label><input type="date" id="relatorioFim" /></div>
+            </div>
+            <div class="grid-2" id="filtroRelatorioAnual" style="display:none;">
+              <div class="field"><label>Ano</label><input type="number" id="relatorioAno" min="2020" step="1" /></div>
+              <div class="field"><label>&nbsp;</label><button class="btn btn-secondary" onclick="carregarRelatorio()">Consultar</button></div>
             </div>
             <div class="action-row">
-              <button class="btn btn-secondary" onclick="carregarRelatorio()">Consultar</button>
+              <button class="btn btn-secondary" id="btnConsultarRelatorioPeriodo" style="display:none;" onclick="carregarRelatorio()">Consultar</button>
               <button class="btn btn-ghost" onclick="exportarRelatorioCSV()">Exportar CSV</button>
               <button class="btn btn-ghost" onclick="imprimirRelatorio()">Imprimir</button>
             </div>
@@ -378,7 +397,7 @@
         </div>
 
         <div class="panel" id="panel-laundry">
-          <div class="page-head"><div><div class="section-title">Laundry</div><div class="section-desc">Registe valores diários e consulte o total mensal.</div></div></div>
+          <div class="page-head"><div><div class="section-title">Laundry</div><div class="section-desc">Registe valores diários e analise mensalmente, por período ou por ano.</div></div></div>
           <div class="card"><div class="card-pad">
             <div class="grid-3">
               <div class="field"><label>Data</label><input type="date" id="laundryData" /></div>
@@ -388,10 +407,18 @@
             <button class="btn btn-primary" onclick="guardarLaundry()">＋ Guardar Valor</button>
             <div class="divider"></div>
             <div class="grid-2">
-              <div class="field"><label>Mês</label><input type="month" id="laundryMes" /></div>
-              <div class="field"><label>&nbsp;</label><button class="btn btn-secondary" onclick="carregarLaundry()">Consultar</button></div>
+              <div class="field"><label>Tipo de análise</label><select id="tipoLaundry" onchange="atualizarFiltrosLaundry()"><option value="mensal">Mensal</option><option value="periodo">Período</option><option value="anual">Anual</option></select></div>
+              <div class="field" id="filtroLaundryMensal"><label>Mês</label><input type="month" id="laundryMes" /></div>
+            </div>
+            <div class="grid-2" id="filtroLaundryPeriodo" style="display:none;">
+              <div class="field"><label>Data inicial</label><input type="date" id="laundryInicio" /></div>
+              <div class="field"><label>Data final</label><input type="date" id="laundryFim" /></div>
+            </div>
+            <div class="grid-2" id="filtroLaundryAnual" style="display:none;">
+              <div class="field"><label>Ano</label><input type="number" id="laundryAno" min="2020" step="1" /></div>
             </div>
             <div class="action-row">
+              <button class="btn btn-secondary" id="btnConsultarLaundry" onclick="carregarLaundry()">Consultar</button>
               <button class="btn btn-ghost" onclick="exportarLaundryCSV()">Exportar CSV</button>
             </div>
             <div id="laundryResultado"></div>
@@ -1312,24 +1339,62 @@
       window.imprimirRecibo(clienteNome, itensCopia, dataHoraFormatada);
     };
 
+    window.atualizarFiltrosRelatorio = function() {
+      const tipo = document.getElementById("tipoRelatorio").value;
+      document.getElementById("filtroRelatorioMensal").style.display = tipo === "mensal" ? "grid" : "none";
+      document.getElementById("filtroRelatorioPeriodo").style.display = tipo === "periodo" ? "grid" : "none";
+      document.getElementById("filtroRelatorioAnual").style.display = tipo === "anual" ? "grid" : "none";
+      document.getElementById("btnConsultarRelatorioPeriodo").style.display = tipo === "periodo" ? "inline-flex" : "none";
+    };
+
+    function obterFiltroRelatorio() {
+      const tipo = document.getElementById("tipoRelatorio").value;
+      if (tipo === "mensal") {
+        const mesSelecionado = document.getElementById("mesRelatorio").value;
+        if (!mesSelecionado) return { erro: "Selecione o mês" };
+        const [anoTexto, mesTexto] = mesSelecionado.split("-");
+        const ano = Number(anoTexto);
+        const mes = Number(mesTexto);
+        const inicio = `${anoTexto}-${mesTexto}-01`;
+        const fim = dataInputLocal(new Date(ano, mes, 0));
+        const periodoLabel = new Date(ano, mes - 1, 1).toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
+        return { tipo, inicio, fim, ano, mes, periodoLabel };
+      }
+      if (tipo === "periodo") {
+        const inicio = document.getElementById("relatorioInicio").value;
+        const fim = document.getElementById("relatorioFim").value;
+        if (!inicio || !fim) return { erro: "Selecione as datas inicial e final" };
+        if (inicio > fim) return { erro: "A data inicial não pode ser maior que a final" };
+        return { tipo, inicio, fim, ano: Number(fim.slice(0, 4)), periodoLabel: `${inicio} a ${fim}` };
+      }
+      const ano = Number(document.getElementById("relatorioAno").value);
+      if (!ano || ano < 2000) return { erro: "Digite um ano válido" };
+      return { tipo, inicio: `${ano}-01-01`, fim: `${ano}-12-31`, ano, periodoLabel: String(ano) };
+    }
+
+    function mesesDoRelatorio(inicio, fim, dadosPorMes) {
+      const meses = [];
+      const atual = new Date(`${inicio.slice(0, 7)}-01T00:00:00`);
+      const limite = new Date(`${fim.slice(0, 7)}-01T00:00:00`);
+      while (atual <= limite) {
+        const ano = atual.getFullYear();
+        const mes = atual.getMonth() + 1;
+        const chave = `${ano}-${String(mes).padStart(2, "0")}`;
+        const nome = atual.toLocaleDateString("pt-PT", { month: "short", year: inicio.slice(0, 4) === fim.slice(0, 4) ? undefined : "2-digit" });
+        meses.push(dadosPorMes[chave] || { chave, nome, total: 0, kg: 0, registos: 0 });
+        atual.setMonth(atual.getMonth() + 1);
+      }
+      return meses;
+    }
+
     window.carregarRelatorio = async function() {
       const clienteId = document.getElementById("clienteRelatorio").value;
       if (!clienteId) { showToast("Selecione um cliente", "error"); return; }
-
-      const mesSelecionado = document.getElementById("mesRelatorio").value;
-      if (!mesSelecionado) { showToast("Selecione o mês", "error"); return; }
-      const [anoTexto, mesTexto] = mesSelecionado.split("-");
-      const mes = Number(mesTexto);
-      const ano = Number(anoTexto);
+      const filtro = obterFiltroRelatorio();
+      if (filtro.erro) { showToast(filtro.erro, "error"); return; }
       setResultadoLoading("A carregar relatório...");
 
-      const q = query(
-        collection(db, "registros"),
-        where("clienteId", "==", clienteId),
-        where("mes", "==", mes),
-        where("ano", "==", ano)
-      );
-
+      const q = query(collection(db, "registros"), where("clienteId", "==", clienteId));
       let snapshot;
       try {
         snapshot = await getDocs(q);
@@ -1339,54 +1404,83 @@
         setResultadoLoading("Não foi possível carregar o relatório.");
         return;
       }
-      const resultado = document.getElementById("resultado");
-
-      if (snapshot.empty) {
-        relatorioAtual = [];
-        ultimoResumoRelatorio = null;
-        resultado.innerHTML = `
-          <div class="report-box" style="padding:40px;text-align:center;">
-            <div style="font-size:28px;margin-bottom:10px;">📭</div>
-            <div style="color:var(--text-3);font-size:14px;">Nenhum registo encontrado neste mês.</div>
-          </div>
-        `;
-        return;
-      }
 
       let totalKg = 0;
       let subtotalGeral = 0;
       let ivaGeral = 0;
       let totalGeral = 0;
       const porProduto = {};
+      const porMes = {};
+      const porDia = {};
       const registos = [];
 
       snapshot.forEach(d => {
         const item = normalizarRegisto({ id: d.id, ...d.data() });
+        const data = item.data || String(item.timestamp || "").slice(0, 10);
+        if (!dataNoPeriodo(data, filtro.inicio, filtro.fim)) return;
+        item.data = data;
+        const produtoNome = item.produtoNome || "Sem produto";
         totalKg += item.peso;
         subtotalGeral += item.subtotal;
         ivaGeral += item.valorIVA;
         totalGeral += item.total;
-        if (!porProduto[item.produtoNome]) {
-          porProduto[item.produtoNome] = { peso: 0, subtotal: 0, total: 0 };
-        }
-        porProduto[item.produtoNome].peso += item.peso;
-        porProduto[item.produtoNome].subtotal += item.subtotal;
-        porProduto[item.produtoNome].total += item.total;
+        if (!porProduto[produtoNome]) porProduto[produtoNome] = { nome: produtoNome, kg: 0, subtotal: 0, total: 0, registos: 0 };
+        porProduto[produtoNome].kg += item.peso;
+        porProduto[produtoNome].subtotal += item.subtotal;
+        porProduto[produtoNome].total += item.total;
+        porProduto[produtoNome].registos += 1;
+
+        const mesKey = data.slice(0, 7);
+        const mesNome = new Date(`${mesKey}-01T00:00:00`).toLocaleDateString("pt-PT", { month: "short", year: filtro.inicio.slice(0, 4) === filtro.fim.slice(0, 4) ? undefined : "2-digit" });
+        if (!porMes[mesKey]) porMes[mesKey] = { chave: mesKey, nome: mesNome, total: 0, kg: 0, registos: 0 };
+        porMes[mesKey].total += item.total;
+        porMes[mesKey].kg += item.peso;
+        porMes[mesKey].registos += 1;
+
+        if (!porDia[data]) porDia[data] = { data, nome: data, total: 0, kg: 0, registos: 0 };
+        porDia[data].total += item.total;
+        porDia[data].kg += item.peso;
+        porDia[data].registos += 1;
         registos.push(item);
       });
 
+      const resultado = document.getElementById("resultado");
+      if (!registos.length) {
+        relatorioAtual = [];
+        ultimoResumoRelatorio = null;
+        resultado.innerHTML = `
+          <div class="report-box" style="padding:40px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:10px;">📭</div>
+            <div style="color:var(--text-3);font-size:14px;">Nenhum registo encontrado neste período.</div>
+          </div>
+        `;
+        return;
+      }
+
       registos.sort((a, b) => String(b.timestamp || b.data).localeCompare(String(a.timestamp || a.data)));
+      const produtos = mapParaLista(porProduto);
+      const meses = mesesDoRelatorio(filtro.inicio, filtro.fim, porMes);
+      const dias = Object.values(porDia).sort((a, b) => b.total - a.total);
+      const maxProduto = Math.max(0, ...produtos.map(p => p.total));
+      const maxMes = Math.max(0, ...meses.map(m => m.total));
+      const melhor = filtro.tipo === "anual" ? [...meses].sort((a, b) => b.total - a.total)[0] : dias[0];
+      const precoMedioKg = totalKg > 0 ? totalGeral / totalKg : 0;
+      const ticketMedio = registos.length ? totalGeral / registos.length : 0;
 
       relatorioAtual = registos;
-      ultimoResumoRelatorio = { mes, ano, totalKg, subtotalGeral, ivaGeral, totalGeral };
-      const nomeMes = new Date(ano, mes - 1, 1).toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
+      ultimoResumoRelatorio = { ...filtro, totalKg, subtotalGeral, ivaGeral, totalGeral, precoMedioKg, ticketMedio, produtos, meses, dias, registos: registos.length };
 
-      const resumoHTML = Object.entries(porProduto).map(([nome, dados]) => `
-        <div class="report-row">
-          <span class="report-row-label">${escapeHTML(nome)}</span>
-          <span class="report-row-value">${quantidade(dados.peso)} • ${moeda(dados.total)}</span>
-        </div>
-      `).join("");
+      const produtosHTML = barRows(produtos, maxProduto, {
+        vazio: "Sem produtos no período.",
+        detalhe: item => `${quantidade(item.kg)} • ${moeda(item.total)}`
+      });
+      const opcoesEvolucao = {
+        vazio: "Sem evolução mensal neste período.",
+        detalhe: item => `${moeda(item.total)} • ${Number(item.kg || 0).toFixed(2)} kg`
+      };
+      const evolucaoHTML = filtro.tipo === "anual"
+        ? verticalBars(meses, maxMes, opcoesEvolucao)
+        : barRows(meses, maxMes, opcoesEvolucao);
 
       const registosHTML = registos.map(r => `
         <div class="report-row">
@@ -1405,17 +1499,29 @@
       resultado.innerHTML = `
         <div class="report-box">
           <div class="report-header">
-            <div class="report-header-label">Total — ${escapeHTML(nomeMes)}</div>
+            <div class="report-header-label">Total — ${escapeHTML(filtro.periodoLabel)}</div>
             <div class="report-total">${moeda(totalGeral)}<span> faturado</span></div>
           </div>
           <div class="metrics-grid">
             <div class="metric-card"><div class="metric-label">Quantidade</div><div class="metric-value">${totalKg.toFixed(2)} kg</div></div>
+            <div class="metric-card"><div class="metric-label">Preço médio/kg</div><div class="metric-value">${moeda(precoMedioKg)}</div></div>
+            <div class="metric-card"><div class="metric-label">Ticket médio</div><div class="metric-value">${moeda(ticketMedio)}</div></div>
+            <div class="metric-card"><div class="metric-label">Registos</div><div class="metric-value">${registos.length}</div></div>
             <div class="metric-card"><div class="metric-label">Subtotal</div><div class="metric-value">${moeda(subtotalGeral)}</div></div>
             <div class="metric-card"><div class="metric-label">IVA</div><div class="metric-value">${moeda(ivaGeral)}</div></div>
-            <div class="metric-card"><div class="metric-label">Registos</div><div class="metric-value">${registos.length}</div></div>
+            <div class="metric-card"><div class="metric-label">Produtos</div><div class="metric-value">${produtos.length}</div></div>
+            <div class="metric-card"><div class="metric-label">${filtro.tipo === "anual" ? "Melhor mês" : "Melhor dia"}</div><div class="metric-value">${escapeHTML(melhor?.nome || melhor?.data || "-")}</div></div>
           </div>
-          <div class="report-section-title">Por produto</div>
-          ${resumoHTML}
+          <div class="chart-grid">
+            <div class="chart-panel">
+              <div class="chart-title">Evolução mensal</div>
+              ${evolucaoHTML}
+            </div>
+            <div class="chart-panel">
+              <div class="chart-title">Faturação por produto</div>
+              ${produtosHTML}
+            </div>
+          </div>
           <div class="report-section-title" style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px;">Registos</div>
           ${registosHTML}
         </div>
@@ -1476,26 +1582,54 @@
     }
 
     window.exportarRelatorioCSV = function() {
-      if (!relatorioAtual.length) { showToast("Consulte um relatório primeiro", "error"); return; }
-      const linhas = [
-        ["Data", "Cliente", "Produto", "Quantidade", "Valor unitário", "Subtotal", "IVA", "Total"].map(csvValor).join(";"),
-        ...relatorioAtual.map(r => [
-          r.data,
-          r.clienteNome,
-          r.produtoNome,
-          Number(r.peso || 0).toFixed(2),
-          Number(r.precoUnitario || 0).toFixed(2),
-          Number(r.subtotal || 0).toFixed(2),
-          Number(r.valorIVA || 0).toFixed(2),
-          Number(r.total || 0).toFixed(2)
-        ].map(csvValor).join(";"))
-      ];
+      if (!relatorioAtual.length || !ultimoResumoRelatorio) { showToast("Consulte um relatório primeiro", "error"); return; }
+      const linhas = [];
+      linhas.push(["Relatório", ultimoResumoRelatorio.periodoLabel].map(csvValor).join(";"));
+      linhas.push(["Total", Number(ultimoResumoRelatorio.totalGeral || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Quantidade kg", Number(ultimoResumoRelatorio.totalKg || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Preço médio/kg", Number(ultimoResumoRelatorio.precoMedioKg || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Registos", ultimoResumoRelatorio.registos || relatorioAtual.length].map(csvValor).join(";"));
+      linhas.push("");
+
+      linhas.push(["Evolução mensal"].map(csvValor).join(";"));
+      linhas.push(["Mês", "Quantidade", "Registos", "Total"].map(csvValor).join(";"));
+      (ultimoResumoRelatorio.meses || []).forEach(m => linhas.push([
+        m.nome,
+        Number(m.kg || 0).toFixed(2),
+        m.registos || 0,
+        Number(m.total || 0).toFixed(2)
+      ].map(csvValor).join(";")));
+      linhas.push("");
+
+      linhas.push(["Faturação por produto"].map(csvValor).join(";"));
+      linhas.push(["Produto", "Quantidade", "Registos", "Subtotal", "Total"].map(csvValor).join(";"));
+      (ultimoResumoRelatorio.produtos || []).forEach(p => linhas.push([
+        p.nome,
+        Number(p.kg || 0).toFixed(2),
+        p.registos || 0,
+        Number(p.subtotal || 0).toFixed(2),
+        Number(p.total || 0).toFixed(2)
+      ].map(csvValor).join(";")));
+      linhas.push("");
+
+      linhas.push(["Registos"].map(csvValor).join(";"));
+      linhas.push(["Data", "Cliente", "Produto", "Quantidade", "Valor unitário", "Subtotal", "IVA", "Total"].map(csvValor).join(";"));
+      relatorioAtual.forEach(r => linhas.push([
+        r.data,
+        r.clienteNome,
+        r.produtoNome,
+        Number(r.peso || 0).toFixed(2),
+        Number(r.precoUnitario || 0).toFixed(2),
+        Number(r.subtotal || 0).toFixed(2),
+        Number(r.valorIVA || 0).toFixed(2),
+        Number(r.total || 0).toFixed(2)
+      ].map(csvValor).join(";")));
       const blob = new Blob(["\uFEFF" + linhas.join("\n")], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       const cliente = document.getElementById("clienteRelatorio").selectedOptions[0]?.textContent || "cliente";
       link.href = url;
-      link.download = `relatorio-${cliente}-${document.getElementById("mesRelatorio").value}.csv`.replace(/[\\/:*?"<>|]+/g, "-");
+      link.download = `relatorio-${cliente}-${ultimoResumoRelatorio.periodoLabel}.csv`.replace(/[\\/:*?"<>|]+/g, "-");
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1505,8 +1639,6 @@
     window.imprimirRelatorio = function() {
       if (!relatorioAtual.length || !ultimoResumoRelatorio) { showToast("Consulte um relatório primeiro", "error"); return; }
       const cliente = document.getElementById("clienteRelatorio").selectedOptions[0]?.textContent || "";
-      const nomeMes = new Date(ultimoResumoRelatorio.ano, ultimoResumoRelatorio.mes - 1, 1)
-        .toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
       const linhas = relatorioAtual.map(r => `
         <tr>
           <td>${escapeHTML(r.data)}</td>
@@ -1531,7 +1663,7 @@
   .valor { font-weight:bold; font-size:18px; margin-top:4px; }
 </style></head><body>
   <h1>Relatório H2O Lavandaria</h1>
-  <div class="meta">${escapeHTML(cliente)} • ${escapeHTML(nomeMes)}</div>
+  <div class="meta">${escapeHTML(cliente)} • ${escapeHTML(ultimoResumoRelatorio.periodoLabel)}</div>
   <div class="totais">
     <div class="box"><div class="label">Quantidade</div><div class="valor">${ultimoResumoRelatorio.totalKg.toFixed(2)} kg</div></div>
     <div class="box"><div class="label">Subtotal</div><div class="valor">${moeda(ultimoResumoRelatorio.subtotalGeral)}</div></div>
@@ -1551,6 +1683,38 @@
       if (resultado) {
         resultado.innerHTML = `<div class="report-box" style="padding:32px;text-align:center;color:var(--text-3);">${escapeHTML(texto)}</div>`;
       }
+    }
+
+    window.atualizarFiltrosLaundry = function() {
+      const tipo = document.getElementById("tipoLaundry").value;
+      document.getElementById("filtroLaundryMensal").style.display = tipo === "mensal" ? "block" : "none";
+      document.getElementById("filtroLaundryPeriodo").style.display = tipo === "periodo" ? "grid" : "none";
+      document.getElementById("filtroLaundryAnual").style.display = tipo === "anual" ? "grid" : "none";
+    };
+
+    function obterFiltroLaundry() {
+      const tipo = document.getElementById("tipoLaundry").value;
+      if (tipo === "mensal") {
+        const mesSelecionado = document.getElementById("laundryMes").value;
+        if (!mesSelecionado) return { erro: "Selecione o mês" };
+        const [anoTexto, mesTexto] = mesSelecionado.split("-");
+        const ano = Number(anoTexto);
+        const mes = Number(mesTexto);
+        const inicio = `${anoTexto}-${mesTexto}-01`;
+        const fim = dataInputLocal(new Date(ano, mes, 0));
+        const periodoLabel = new Date(ano, mes - 1, 1).toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
+        return { tipo, inicio, fim, ano, mes, periodoLabel };
+      }
+      if (tipo === "periodo") {
+        const inicio = document.getElementById("laundryInicio").value;
+        const fim = document.getElementById("laundryFim").value;
+        if (!inicio || !fim) return { erro: "Selecione as datas inicial e final" };
+        if (inicio > fim) return { erro: "A data inicial não pode ser maior que a final" };
+        return { tipo, inicio, fim, ano: Number(fim.slice(0, 4)), periodoLabel: `${inicio} a ${fim}` };
+      }
+      const ano = Number(document.getElementById("laundryAno").value);
+      if (!ano || ano < 2000) return { erro: "Digite um ano válido" };
+      return { tipo, inicio: `${ano}-01-01`, fim: `${ano}-12-31`, ano, periodoLabel: String(ano) };
     }
 
     window.guardarLaundry = async function() {
@@ -1576,9 +1740,8 @@
         document.getElementById("laundryValor").value = "";
         document.getElementById("laundryObs").value = "";
         showToast("Valor guardado com sucesso!");
-        const mesAtual = document.getElementById("laundryMes").value;
-        const mesDoRegisto = `${ano}-${String(mes).padStart(2, "0")}`;
-        if (mesAtual === mesDoRegisto) await window.carregarLaundry();
+        const filtroAtual = obterFiltroLaundry();
+        if (!filtroAtual.erro && dataNoPeriodo(data, filtroAtual.inicio, filtroAtual.fim)) await window.carregarLaundry();
       } catch (erro) {
         console.error("Erro ao guardar Laundry:", erro);
         showToast("Erro ao guardar valor", "error");
@@ -1586,22 +1749,13 @@
     };
 
     window.carregarLaundry = async function() {
-      const mesSelecionado = document.getElementById("laundryMes").value;
-      if (!mesSelecionado) { showToast("Selecione o mês", "error"); return; }
-      const [anoTexto, mesTexto] = mesSelecionado.split("-");
-      const mes = Number(mesTexto);
-      const ano = Number(anoTexto);
+      const filtro = obterFiltroLaundry();
+      if (filtro.erro) { showToast(filtro.erro, "error"); return; }
       setLaundryLoading("A carregar histórico...");
-
-      const q = query(
-        collection(db, "laundry"),
-        where("mes", "==", mes),
-        where("ano", "==", ano)
-      );
 
       let snapshot;
       try {
-        snapshot = await getDocs(q);
+        snapshot = await getDocs(collection(db, "laundry"));
       } catch (erro) {
         console.error("Erro ao carregar Laundry:", erro);
         showToast("Erro ao carregar histórico", "error");
@@ -1610,31 +1764,68 @@
       }
 
       const resultado = document.getElementById("laundryResultado");
-      if (snapshot.empty) {
+      const registos = [];
+      let total = 0;
+      const porMes = {};
+      const porDia = {};
+      snapshot.forEach(d => {
+        const item = { id: d.id, ...d.data() };
+        const data = item.data || String(item.criadoEm || "").slice(0, 10);
+        if (!dataNoPeriodo(data, filtro.inicio, filtro.fim)) return;
+        item.data = data;
+        item.valor = Number(item.valor || 0);
+        total += item.valor;
+        const mesKey = data.slice(0, 7);
+        const mesNome = new Date(`${mesKey}-01T00:00:00`).toLocaleDateString("pt-PT", { month: "short", year: filtro.inicio.slice(0, 4) === filtro.fim.slice(0, 4) ? undefined : "2-digit" });
+        if (!porMes[mesKey]) porMes[mesKey] = { chave: mesKey, nome: mesNome, total: 0, valor: 0, registos: 0 };
+        porMes[mesKey].total += item.valor;
+        porMes[mesKey].valor += item.valor;
+        porMes[mesKey].registos += 1;
+        if (!porDia[data]) porDia[data] = { data, nome: data, total: 0, valor: 0, registos: 0 };
+        porDia[data].total += item.valor;
+        porDia[data].valor += item.valor;
+        porDia[data].registos += 1;
+        registos.push(item);
+      });
+      registos.sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
+
+      if (!registos.length) {
         laundryAtual = [];
         ultimoResumoLaundry = null;
         resultado.innerHTML = `
           <div class="report-box" style="padding:40px;text-align:center;">
             <div style="font-size:28px;margin-bottom:10px;">📭</div>
-            <div style="color:var(--text-3);font-size:14px;">Nenhum valor registado neste mês.</div>
+            <div style="color:var(--text-3);font-size:14px;">Nenhum valor registado neste período.</div>
           </div>
         `;
         return;
       }
 
-      const registos = [];
-      let total = 0;
-      snapshot.forEach(d => {
-        const item = { id: d.id, ...d.data() };
-        item.valor = Number(item.valor || 0);
-        total += item.valor;
-        registos.push(item);
-      });
-      registos.sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
-      laundryAtual = registos;
-      ultimoResumoLaundry = { mes, ano, total, quantidade: registos.length };
+      const meses = mesesDoRelatorio(filtro.inicio, filtro.fim, porMes);
+      const diasPeriodo = diasDoPeriodo(filtro.inicio, filtro.fim, porDia);
+      const diasComRegisto = Object.values(porDia).sort((a, b) => b.total - a.total);
+      const diasGrafico = filtro.tipo === "mensal" ? diasPeriodo : diasComRegisto.slice(0, 12);
+      const maxMes = Math.max(0, ...meses.map(m => m.total));
+      const maxDia = Math.max(0, ...diasGrafico.map(d => d.total));
+      const melhor = filtro.tipo === "anual" ? [...meses].sort((a, b) => b.total - a.total)[0] : diasComRegisto[0];
+      const mediaRegisto = total / registos.length;
+      const mediaDia = diasComRegisto.length ? total / diasComRegisto.length : 0;
 
-      const nomeMes = new Date(ano, mes - 1, 1).toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
+      laundryAtual = registos;
+      ultimoResumoLaundry = { ...filtro, total, quantidade: registos.length, mediaRegisto, mediaDia, meses, dias: diasPeriodo, diasComRegisto };
+
+      const opcoesEvolucao = {
+        vazio: "Sem evolução mensal neste período.",
+        detalhe: item => filtro.tipo === "anual" ? moeda(item.total) : `${moeda(item.total)} • ${item.registos || 0} registo(s)`
+      };
+      const evolucaoHTML = filtro.tipo === "anual"
+        ? verticalBars(meses, maxMes, opcoesEvolucao)
+        : barRows(meses, maxMes, opcoesEvolucao);
+      const diasHTML = barRows(diasGrafico, maxDia, {
+        tipo: "laundry",
+        vazio: "Sem movimento diário neste período.",
+        detalhe: item => `${moeda(item.total)} • ${item.registos || 0} registo(s)`
+      });
       const registosHTML = registos.map(r => `
         <div class="report-row">
           <div>
@@ -1651,14 +1842,28 @@
       resultado.innerHTML = `
         <div class="report-box">
           <div class="report-header">
-            <div class="report-header-label">Laundry — ${escapeHTML(nomeMes)}</div>
-            <div class="report-total">${moeda(total)}<span> total mensal</span></div>
+            <div class="report-header-label">Laundry — ${escapeHTML(filtro.periodoLabel)}</div>
+            <div class="report-total">${moeda(total)}<span> total</span></div>
           </div>
           <div class="metrics-grid">
             <div class="metric-card"><div class="metric-label">Total</div><div class="metric-value">${moeda(total)}</div></div>
             <div class="metric-card"><div class="metric-label">Registos</div><div class="metric-value">${registos.length}</div></div>
-            <div class="metric-card"><div class="metric-label">Média</div><div class="metric-value">${moeda(total / registos.length)}</div></div>
-            <div class="metric-card"><div class="metric-label">Mês</div><div class="metric-value">${String(mes).padStart(2, "0")}/${ano}</div></div>
+            <div class="metric-card"><div class="metric-label">Média/registo</div><div class="metric-value">${moeda(mediaRegisto)}</div></div>
+            <div class="metric-card"><div class="metric-label">Média/dia ativo</div><div class="metric-value">${moeda(mediaDia)}</div></div>
+            <div class="metric-card"><div class="metric-label">Dias ativos</div><div class="metric-value">${diasComRegisto.length}</div></div>
+            <div class="metric-card"><div class="metric-label">${filtro.tipo === "anual" ? "Melhor mês" : "Melhor dia"}</div><div class="metric-value">${escapeHTML(melhor?.nome || melhor?.data || "-")}</div></div>
+            <div class="metric-card"><div class="metric-label">Maior valor</div><div class="metric-value">${moeda(Math.max(...registos.map(r => r.valor)))}</div></div>
+            <div class="metric-card"><div class="metric-label">Período</div><div class="metric-value">${escapeHTML(filtro.tipo === "anual" ? String(filtro.ano) : filtro.tipo)}</div></div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-panel">
+              <div class="chart-title">Evolução mensal</div>
+              ${evolucaoHTML}
+            </div>
+            <div class="chart-panel">
+              <div class="chart-title">${filtro.tipo === "mensal" ? "Movimento diário" : "Melhores dias"}</div>
+              ${diasHTML}
+            </div>
           </div>
           <div class="report-section-title">Histórico</div>
           ${registosHTML}
@@ -1681,20 +1886,45 @@
     };
 
     window.exportarLaundryCSV = function() {
-      if (!laundryAtual.length) { showToast("Consulte o histórico primeiro", "error"); return; }
-      const linhas = [
-        ["Data", "Valor", "Observação"].map(csvValor).join(";"),
-        ...laundryAtual.map(r => [
-          r.data,
-          Number(r.valor || 0).toFixed(2),
-          r.observacao || ""
-        ].map(csvValor).join(";"))
-      ];
+      if (!laundryAtual.length || !ultimoResumoLaundry) { showToast("Consulte o histórico primeiro", "error"); return; }
+      const linhas = [];
+      linhas.push(["Laundry", ultimoResumoLaundry.periodoLabel].map(csvValor).join(";"));
+      linhas.push(["Total", Number(ultimoResumoLaundry.total || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Registos", ultimoResumoLaundry.quantidade || laundryAtual.length].map(csvValor).join(";"));
+      linhas.push(["Média por registo", Number(ultimoResumoLaundry.mediaRegisto || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push(["Média por dia ativo", Number(ultimoResumoLaundry.mediaDia || 0).toFixed(2)].map(csvValor).join(";"));
+      linhas.push("");
+
+      linhas.push(["Evolução mensal"].map(csvValor).join(";"));
+      linhas.push(["Mês", "Registos", "Total"].map(csvValor).join(";"));
+      (ultimoResumoLaundry.meses || []).forEach(m => linhas.push([
+        m.nome,
+        m.registos || 0,
+        Number(m.total || 0).toFixed(2)
+      ].map(csvValor).join(";")));
+      linhas.push("");
+
+      linhas.push(["Movimento diário"].map(csvValor).join(";"));
+      linhas.push(["Data", "Registos", "Total"].map(csvValor).join(";"));
+      (ultimoResumoLaundry.dias || []).forEach(d => linhas.push([
+        d.data,
+        d.registos || 0,
+        Number(d.total || d.valor || 0).toFixed(2)
+      ].map(csvValor).join(";")));
+      linhas.push("");
+
+      linhas.push(["Histórico"].map(csvValor).join(";"));
+      linhas.push(["Data", "Valor", "Observação"].map(csvValor).join(";"));
+      laundryAtual.forEach(r => linhas.push([
+        r.data,
+        Number(r.valor || 0).toFixed(2),
+        r.observacao || ""
+      ].map(csvValor).join(";")));
       const blob = new Blob(["\uFEFF" + linhas.join("\n")], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `laundry-${document.getElementById("laundryMes").value}.csv`.replace(/[\\/:*?"<>|]+/g, "-");
+      link.download = `laundry-${ultimoResumoLaundry.periodoLabel}.csv`.replace(/[\\/:*?"<>|]+/g, "-");
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1743,6 +1973,28 @@
           </div>
         `;
       }).join("");
+    }
+
+    function verticalBars(lista, valorMaximo, opcoes = {}) {
+      if (!lista.length) return `<div class="empty-state"><p>${escapeHTML(opcoes.vazio || "Sem dados no período.")}</p></div>`;
+      const max = valorMaximo > 0 ? valorMaximo : 1;
+      return `
+        <div class="vertical-chart">
+          ${lista.map(item => {
+            const valor = Number(item.valor ?? item.total ?? 0);
+            const altura = valor > 0 ? Math.max(3, Math.round((valor / max) * 100)) : 0;
+            const detalhe = opcoes.detalhe ? opcoes.detalhe(item) : moeda(valor);
+            const rotulo = item.nome || item.data || "";
+            return `
+              <div class="vertical-bar" title="${escapeHTML(rotulo)} • ${escapeHTML(detalhe)}">
+                <div class="vertical-value">${escapeHTML(detalhe)}</div>
+                <div class="vertical-track"><div class="vertical-fill" style="height:${altura}%"></div></div>
+                <div class="vertical-label">${escapeHTML(rotulo)}</div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
     }
 
     window.carregarDashboard = async function() {
@@ -2341,7 +2593,15 @@
       const agora = new Date();
       const primeiroDiaMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
       document.getElementById("mesRelatorio").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+      document.getElementById("relatorioInicio").value = dataInputLocal(primeiroDiaMes);
+      document.getElementById("relatorioFim").value = dataInputLocal(agora);
+      document.getElementById("relatorioAno").value = agora.getFullYear();
+      window.atualizarFiltrosRelatorio();
       document.getElementById("laundryMes").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+      document.getElementById("laundryInicio").value = dataInputLocal(primeiroDiaMes);
+      document.getElementById("laundryFim").value = dataInputLocal(agora);
+      document.getElementById("laundryAno").value = agora.getFullYear();
+      window.atualizarFiltrosLaundry();
       document.getElementById("laundryData").value = dataInputLocal(agora);
       document.getElementById("dashboardInicio").value = dataInputLocal(primeiroDiaMes);
       document.getElementById("dashboardFim").value = dataInputLocal(agora);
