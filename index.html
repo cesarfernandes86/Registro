@@ -470,6 +470,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
       getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -485,6 +486,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
 
     let itensParaSalvar = [];
@@ -517,6 +519,21 @@
     ];
     const IVA_RATE = 0.23;
     const CAIXA_PASSWORD = "082012";
+
+    async function garantirAcessoFirebase() {
+      try {
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Erro ao autenticar no Firebase:", error);
+        const mensagem = error?.code === "auth/admin-restricted-operation"
+          ? "Ative o login Anônimo no Firebase Authentication para acessar os dados."
+          : "Não foi possível autenticar no Firebase. Verifique se o login anônimo está ativo.";
+        showToast(mensagem, "error");
+        throw error;
+      }
+    }
 
     window.showToast = function(msg, tipo = "success") {
       const t = document.getElementById("toast");
@@ -2590,29 +2607,41 @@
     };
 
     async function init() {
-      const agora = new Date();
-      const primeiroDiaMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
-      document.getElementById("mesRelatorio").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
-      document.getElementById("relatorioInicio").value = dataInputLocal(primeiroDiaMes);
-      document.getElementById("relatorioFim").value = dataInputLocal(agora);
-      document.getElementById("relatorioAno").value = agora.getFullYear();
-      window.atualizarFiltrosRelatorio();
-      document.getElementById("laundryMes").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
-      document.getElementById("laundryInicio").value = dataInputLocal(primeiroDiaMes);
-      document.getElementById("laundryFim").value = dataInputLocal(agora);
-      document.getElementById("laundryAno").value = agora.getFullYear();
-      window.atualizarFiltrosLaundry();
-      document.getElementById("laundryData").value = dataInputLocal(agora);
-      document.getElementById("dashboardInicio").value = dataInputLocal(primeiroDiaMes);
-      document.getElementById("dashboardFim").value = dataInputLocal(agora);
-      document.getElementById("caixaInicio").value = dataInputLocal(primeiroDiaMes);
-      document.getElementById("caixaFim").value = dataInputLocal(agora);
-      document.getElementById("caixaData").value = dataInputLocal(agora);
-      atualizarEstadoCaixa();
-      if (caixaDesbloqueado) await carregarCategoriasCaixa();
-      await carregarClientes();
-      await carregarProdutos();
-      await carregarCustosProdutos();
+      try {
+        await garantirAcessoFirebase();
+
+        const agora = new Date();
+        const primeiroDiaMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+        document.getElementById("mesRelatorio").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+        document.getElementById("relatorioInicio").value = dataInputLocal(primeiroDiaMes);
+        document.getElementById("relatorioFim").value = dataInputLocal(agora);
+        document.getElementById("relatorioAno").value = agora.getFullYear();
+        window.atualizarFiltrosRelatorio();
+        document.getElementById("laundryMes").value = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+        document.getElementById("laundryInicio").value = dataInputLocal(primeiroDiaMes);
+        document.getElementById("laundryFim").value = dataInputLocal(agora);
+        document.getElementById("laundryAno").value = agora.getFullYear();
+        window.atualizarFiltrosLaundry();
+        document.getElementById("laundryData").value = dataInputLocal(agora);
+        document.getElementById("dashboardInicio").value = dataInputLocal(primeiroDiaMes);
+        document.getElementById("dashboardFim").value = dataInputLocal(agora);
+        document.getElementById("caixaInicio").value = dataInputLocal(primeiroDiaMes);
+        document.getElementById("caixaFim").value = dataInputLocal(agora);
+        document.getElementById("caixaData").value = dataInputLocal(agora);
+        atualizarEstadoCaixa();
+        if (caixaDesbloqueado) await carregarCategoriasCaixa();
+        await carregarClientes();
+        await carregarProdutos();
+        await carregarCustosProdutos();
+      } catch (error) {
+        console.error("Erro ao carregar dados iniciais:", error);
+        const mensagem = error?.code === "auth/admin-restricted-operation"
+          ? "Ative o login Anônimo no Firebase Authentication para acessar os dados."
+          : error?.code === "permission-denied"
+          ? "Acesso negado pelo Firestore. Ative a autenticação anônima e permita usuários autenticados nas regras."
+          : "Não foi possível carregar os dados do Firebase.";
+        showToast(mensagem, "error");
+      }
     }
 
     init();
