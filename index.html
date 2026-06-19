@@ -212,24 +212,116 @@
     .toast-dot.success { background:var(--green); } .toast-dot.error { background:var(--red); }
 
     @media (max-width: 900px) {
-      .app-shell { grid-template-columns: 1fr; }
-      .sidebar { position: relative; height:auto; padding: 14px; }
-      .brand-card { display:flex; align-items:center; text-align:left; gap:12px; padding:4px 6px 12px; }
-      .brand-logo { width: 86px; }
-      .tab-nav { flex-direction:row; overflow-x:auto; padding-bottom:6px; }
-      .tab-btn { white-space:nowrap; min-width:max-content; }
-      .main-area { padding: 18px 14px 28px; }
-      .page-head { flex-direction:column; }
-      .date-pill { width:100%; justify-content:center; }
-      .grid-2, .grid-3, .row-add, .metrics-grid, .chart-grid, .cost-summary, .cost-products-grid { grid-template-columns: 1fr; }
-      .bar-row { grid-template-columns: 1fr; gap:6px; }
-      .bar-value { text-align:left; }
-      .vertical-chart { grid-template-columns: repeat(6, minmax(34px, 1fr)); overflow-x:auto; }
-      .action-row { flex-direction:column; }
-      .action-row .btn { width:100%; }
-      .btn-add { width:100%; }
-      .actions-bar { flex-direction:column; }
-      .actions-bar .btn { width:100%; }
+      html, body { width:100%; max-width:100%; overflow-x:hidden; }
+      body { background: linear-gradient(180deg, #f6fdff 0%, #e9f9fc 100%); }
+      .app-shell { grid-template-columns: minmax(0, 1fr); }
+      .sidebar {
+        position: sticky; top: 0; height:auto;
+        padding: 10px 12px 8px;
+        border-right:0; border-bottom:1px solid var(--line);
+        box-shadow: 0 10px 28px rgba(15,89,100,.10);
+      }
+      .brand-card { display:flex; align-items:center; justify-content:center; text-align:left; gap:10px; padding:0 4px 8px; }
+      .brand-logo { width: 72px; max-width: 72px; }
+      .tab-nav {
+        flex-direction:row; gap:8px; overflow-x:auto;
+        margin: 0 -12px; padding: 0 12px 8px;
+        scroll-snap-type:x proximity; scrollbar-width:thin;
+      }
+      .tab-btn {
+        flex:0 0 auto; width:auto; min-width:auto; white-space:nowrap;
+        padding: 9px 11px; font-size:14px; border-radius:12px;
+        scroll-snap-align:start;
+      }
+      .tab-btn:hover { transform:none; }
+      .tab-dot { width:24px; height:24px; border-radius:8px; }
+      .main-area { padding: 16px 12px 28px; }
+      .content { max-width:none; width:100%; }
+      .page-head { flex-direction:column; gap:8px; margin-bottom:14px; }
+      .section-title { font-size:24px; line-height:1.12; letter-spacing:0; }
+      .section-desc { margin-top:6px; font-size:14px; line-height:1.35; }
+      .date-pill { width:100%; justify-content:center; white-space:normal; text-align:center; }
+      .card { border-radius:16px; box-shadow: 0 10px 30px rgba(15,89,100,.12); }
+      .card-pad { padding:16px; }
+      .subcard { padding:16px; border-radius:14px; }
+      .divider { margin: 18px -16px; }
+      .grid-2, .grid-3, .row-add, .metrics-grid, .chart-grid, .cost-summary, .cost-products-grid { grid-template-columns: minmax(0, 1fr); }
+      .grid-2, .grid-3, .row-add, .chart-grid, .cost-products-grid { gap:14px; }
+      .field { margin-bottom:14px; min-width:0; }
+      .field label { font-size:13px; margin-bottom:7px; }
+      .field input, .field select { min-height:48px; padding:12px 14px; font-size:16px; }
+      .field select { background-position:right 14px center; padding-right:42px; }
+      .toolbar-row { flex-direction:column; align-items:stretch; gap:10px; }
+      .iva-box { align-items:flex-start; padding:14px 16px; margin:16px 0; font-size:15px; }
+      .item-list, .report-box, .lista-registos-wrap { border-radius:14px; }
+      .item-list-header { padding:12px 14px; }
+      .item-row, .report-row {
+        align-items:flex-start; gap:12px; padding:14px;
+      }
+      .item-left, .report-row > div:first-child { min-width:0; flex:1; }
+      .item-icon { width:32px; height:32px; border-radius:10px; }
+      .item-name, .report-row-label { font-size:15px; overflow-wrap:anywhere; }
+      .item-peso-tag, .report-date { font-size:13px; line-height:1.35; overflow-wrap:anywhere; white-space:normal; }
+      .report-row > div:last-child { flex:0 0 auto; display:flex; align-items:flex-end!important; gap:8px!important; flex-direction:column; }
+      .report-row-value { font-size:14px; text-align:right; }
+      .btn-edit, .btn-remove { min-height:38px; min-width:38px; padding:8px 10px; }
+      .item-total-row { padding:14px; }
+      .item-total-value { font-size:20px; }
+      .report-header { padding:16px; }
+      .report-total { font-size:30px; line-height:1.08; overflow-wrap:anywhere; }
+      .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; padding:12px; }
+      .metric-card { padding:12px; min-width:0; }
+      .metric-label { font-size:11px; }
+      .metric-value { font-size:18px; line-height:1.15; overflow-wrap:anywhere; }
+      .chart-grid { padding:12px; }
+      .chart-panel { padding:14px; overflow:hidden; }
+      .bar-row { grid-template-columns: 1fr; gap:6px; padding:8px 0; border-bottom:1px solid #edf4f7; }
+      .bar-row:last-child { border-bottom:0; }
+      .bar-label { white-space:normal; overflow-wrap:anywhere; }
+      .bar-value { text-align:left; white-space:normal; }
+      .vertical-chart {
+        display:flex; min-height:230px; overflow-x:auto;
+        gap:10px; padding:12px 2px 4px;
+      }
+      .vertical-bar { flex:0 0 42px; height:220px; }
+      .split-total { align-items:flex-start; flex-direction:column; }
+      .legend-row { gap:10px; }
+      .cost-profile-switch { display:grid; grid-template-columns:1fr; gap:10px; }
+      .profile-btn { width:100%; min-width:0; }
+      .cost-product { padding:16px; }
+      .cost-product-head { align-items:flex-start; flex-direction:column; gap:6px; }
+      .cost-pill { white-space:normal; }
+      .action-row { flex-direction:column; align-items:stretch; gap:10px; }
+      .action-row .btn, .btn-add { width:100%; min-width:0; }
+      .actions-bar { flex-direction:column; padding:14px 16px; gap:10px; }
+      .actions-bar .btn { width:100%; min-width:0; }
+      .toast {
+        left:12px; right:12px; bottom:16px; width:auto;
+        transform: translateY(80px);
+        justify-content:center; text-align:center; white-space:normal;
+      }
+      .toast.show { transform: translateY(0); }
+    }
+
+    @media (max-width: 520px) {
+      .sidebar { padding: 8px 10px 7px; }
+      .brand-logo { width:60px; max-width:60px; }
+      .tab-nav { margin:0 -10px; padding:0 10px 7px; }
+      .tab-btn { padding:8px 10px; font-size:13px; gap:8px; }
+      .tab-dot { width:22px; height:22px; }
+      .main-area { padding: 14px 10px 24px; }
+      .card-pad { padding:14px; }
+      .divider { margin:16px -14px; }
+      .section-title { font-size:22px; }
+      .metrics-grid { grid-template-columns: minmax(0, 1fr); }
+      .item-row, .report-row { flex-direction:column; }
+      .report-row > div:last-child {
+        width:100%; flex-direction:row; align-items:center!important;
+        justify-content:space-between;
+      }
+      .report-row-value { text-align:left; }
+      .report-total { font-size:26px; }
+      .btn { min-height:48px; padding:12px 14px; font-size:15px; }
     }
 
   </style>
